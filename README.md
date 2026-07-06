@@ -53,21 +53,6 @@ backend/
 9. The executor returns `AttackResult` records.
 10. Future report modules will aggregate results into campaign reports.
 
-## PHANTOM Concepts Reused
-
-- Attack category coverage for prompt injection, jailbreak, leakage, indirect injection, and RAG-oriented attacks.
-- Payload mutation concepts such as structured prompts, metadata injection, hidden document directives, many-shot/crescendo-style jailbreaks, and leakage pattern detection.
-- The attack content was rewritten and reorganized behind this project's own interfaces.
-
-## PyRIT Concepts Reused
-
-- Strategy-driven attack execution.
-- Provider-neutral target abstraction.
-- Prompt normalization before target delivery.
-- Conversation and message models.
-- Scoring as a separate architecture boundary.
-- Campaign orchestration as a service instead of embedding execution in each attack.
-
 ## Recommended Study Order
 
 1. `backend/models/conversation.py`

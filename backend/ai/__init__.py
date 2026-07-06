@@ -1,0 +1,2 @@
+"""AI coordination components."""
+

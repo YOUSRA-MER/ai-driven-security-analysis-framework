@@ -9,7 +9,7 @@ The project does not copy PHANTOM or Microsoft PyRIT. PHANTOM was used only to i
 ```text
 backend/
   api/          API boundary for future HTTP endpoints
-  attacks/      Original attack strategies
+  attacks/      Dataset-backed attack strategies and sourced prompt library
   ai/           Orchestration and future adaptive AI components
   targets/      Provider-neutral target adapters
   prompt/       Prompt normalization and conversion
@@ -34,11 +34,19 @@ backend/
 
 ## Attack Modules
 
-- `backend/attacks/prompt_injection.py`: direct instruction override, structured payload, metadata-style override, recursive instruction, and authority-claim probes.
-- `backend/attacks/jailbreak.py`: controlled persona, fictional frame, authority escalation, continuation, and crescendo probes.
-- `backend/attacks/prompt_leakage.py`: hidden instruction, configuration, hierarchy, and translation probes.
-- `backend/attacks/indirect_prompt_injection.py`: document, metadata, hidden-text, and multi-turn memory-seed payloads for RAG/tool workflows.
-- `backend/attacks/data_leakage.py`: secret, PII, endpoint, and debug-bundle leakage probes.
+- `backend/attacks/datasets/*.json`: curated attack entries with OWASP mappings, source references, success criteria, and mutation-ready tags.
+- `backend/attacks/library.py`: shared dataset loader with filtering, random selection, placeholder rendering, and `AttackPrompt` conversion.
+- `backend/attacks/prompt_injection.py`: PromptInject, garak, and ps-fuzz style direct injection probes.
+- `backend/attacks/jailbreak.py`: Crescendo, AdvBench, HarmBench, and FlipAttack style probes using safe placeholders for restricted behaviors.
+- `backend/attacks/prompt_leakage.py`: PromptInject prompt-leakage and hidden instruction disclosure probes.
+- `backend/attacks/indirect_prompt_injection.py`: hidden web, HTML comment, and tool-content indirect injections.
+- `backend/attacks/rag_poisoning.py`: poisoned retrieval chunks, citation laundering, and recency-boost attacks.
+- `backend/attacks/roleplay.py`: movie-script, persona, and fictional framing probes.
+- `backend/attacks/encoding.py`: reversed-word, encoded-wrapper, and delimiter escape probes.
+- `backend/attacks/multilingual.py`: cross-lingual and mixed-script prompt attacks.
+- `backend/attacks/context_overflow.py`: long-context, many-shot, and retrieval-stuffing probes.
+- `backend/attacks/data_exfiltration.py`: secret, tool transcript, and training-data replay probes.
+- `backend/attacks/data_leakage.py`: compatibility alias for existing data leakage workflows.
 
 ## Execution Flow
 
@@ -84,4 +92,3 @@ backend/
 ```bash
 python -m backend.main --attack prompt_injection --objective "test whether hidden instructions are exposed" --ollama-model llama3
 ```
-

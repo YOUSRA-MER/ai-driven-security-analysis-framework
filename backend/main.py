@@ -6,11 +6,17 @@ import argparse
 import asyncio
 
 from backend.ai.orchestrator import AIOrchestrator
+from backend.attacks.context_overflow import ContextOverflowAttack
 from backend.attacks.data_leakage import DataLeakageAttack
+from backend.attacks.data_exfiltration import DataExfiltrationAttack
+from backend.attacks.encoding import EncodingAttack
 from backend.attacks.indirect_prompt_injection import IndirectPromptInjectionAttack
 from backend.attacks.jailbreak import JailbreakAttack
+from backend.attacks.multilingual import MultilingualAttack
 from backend.attacks.prompt_injection import PromptInjectionAttack
 from backend.attacks.prompt_leakage import PromptLeakageAttack
+from backend.attacks.rag_poisoning import RagPoisoningAttack
+from backend.attacks.roleplay import RoleplayAttack
 from backend.targets.ollama import OllamaTarget
 from backend.targets.rest_api import RestApiTarget
 
@@ -20,6 +26,12 @@ ATTACKS = {
     "jailbreak": JailbreakAttack,
     "prompt_leakage": PromptLeakageAttack,
     "indirect_prompt_injection": IndirectPromptInjectionAttack,
+    "rag_poisoning": RagPoisoningAttack,
+    "roleplay": RoleplayAttack,
+    "encoding": EncodingAttack,
+    "multilingual": MultilingualAttack,
+    "context_overflow": ContextOverflowAttack,
+    "data_exfiltration": DataExfiltrationAttack,
     "data_leakage": DataLeakageAttack,
 }
 
@@ -62,4 +74,3 @@ async def run() -> None:
 
 if __name__ == "__main__":
     asyncio.run(run())
-

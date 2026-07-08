@@ -1,0 +1,21 @@
+{
+  "id": "atlas-aml-t0051-prompt-injection",
+  "name": "MITRE ATLAS Prompt Injection",
+  "description": "MITRE ATLAS parent mapping for prompt injection behavior against LLM-integrated systems.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["mitre_atlas", "prompt_injection"],
+  "atlas_id": "AML.T0051",
+  "atlas_name": "Prompt Injection",
+  "mapping_type": "technique",
+  "planning_relevance": "Use as the broader MITRE mapping when a plan covers both direct and indirect prompt injection surfaces.",
+  "related_entities": [
+    "obj-prompt-injection-resilience",
+    "obj-indirect-prompt-injection-resilience",
+    "af-prompt-injection",
+    "af-indirect-prompt-injection"
+  ],
+  "references": ["ref-mitre-atlas"],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

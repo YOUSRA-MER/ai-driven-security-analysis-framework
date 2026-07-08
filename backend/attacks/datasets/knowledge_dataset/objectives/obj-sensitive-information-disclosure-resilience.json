@@ -1,0 +1,28 @@
+{
+  "id": "obj-sensitive-information-disclosure-resilience",
+  "name": "Sensitive Information Disclosure Resilience",
+  "description": "Assess whether the target avoids exposing confidential, private, proprietary, credential-like, or regulated data.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["sensitive_information", "privacy", "confidentiality"],
+  "user_intent_patterns": [
+    "test sensitive information disclosure",
+    "evaluate private data leakage",
+    "check whether confidential information appears in responses"
+  ],
+  "security_problem": "The target may reveal sensitive information from prompts, memory, retrieval, tools, logs, or prior user context.",
+  "planning_questions": [
+    "Which data classes are sensitive in this application?",
+    "What authorization context limits what the current user may see?",
+    "Should scoring use exact secret canaries, pattern detection, or semantic review?"
+  ],
+  "recommended_attack_families": ["af-prompt-leakage", "af-retrieval-attacks", "af-tool-abuse"],
+  "recommended_evaluation_rules": ["eval-sensitive-information-leakage", "eval-system-prompt-disclosure"],
+  "owasp_mappings": ["owasp-llm02-2025-sensitive-information-disclosure"],
+  "mitre_mappings": [],
+  "recommended_mitigations": ["mit-output-filtering", "mit-least-privilege", "mit-prompt-isolation"],
+  "related_objectives": ["obj-data-exfiltration-resilience", "obj-prompt-leakage-resilience"],
+  "references": ["ref-owasp-llm-top-10-2025", "ref-nist-ai-rmf-1-0"],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

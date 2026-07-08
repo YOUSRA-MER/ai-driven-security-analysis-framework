@@ -1,0 +1,28 @@
+{
+  "id": "obj-indirect-prompt-injection-resilience",
+  "name": "Indirect Prompt Injection Resilience",
+  "description": "Assess whether external content can steer the model or agent when processed through retrieval, tools, documents, or browsing.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["indirect_prompt_injection", "external_content", "rag"],
+  "user_intent_patterns": [
+    "test indirect prompt injection",
+    "evaluate external content injection",
+    "check whether retrieved content can control the assistant"
+  ],
+  "security_problem": "Untrusted external content may be interpreted as instructions and override the user's task or application policy.",
+  "planning_questions": [
+    "Which external content channels enter model context?",
+    "Can the harness capture retrieved source metadata and tool outputs?",
+    "Which boundaries distinguish content as data rather than instructions?"
+  ],
+  "recommended_attack_families": ["af-indirect-prompt-injection", "af-retrieval-attacks", "af-tool-abuse"],
+  "recommended_evaluation_rules": ["eval-policy-bypass", "eval-tool-abuse-detection", "eval-sensitive-information-leakage"],
+  "owasp_mappings": ["owasp-llm01-2025-prompt-injection", "owasp-llm08-2025-vector-and-embedding-weaknesses"],
+  "mitre_mappings": ["atlas-aml-t0051-prompt-injection", "atlas-aml-t0051-001-llm-prompt-injection-indirect"],
+  "recommended_mitigations": ["mit-prompt-isolation", "mit-input-sanitization", "mit-tool-permission-control"],
+  "related_objectives": ["obj-prompt-injection-resilience", "obj-rag-poisoning-resilience", "obj-tool-misuse-resilience"],
+  "references": ["ref-indirect-prompt-injection-paper", "ref-agentdojo"],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

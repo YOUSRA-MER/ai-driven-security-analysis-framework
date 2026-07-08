@@ -1,0 +1,34 @@
+{
+  "id": "mit-output-filtering",
+  "name": "Output Filtering",
+  "description": "Validate and filter model outputs before they are returned to users or passed to downstream systems.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["output_filtering", "validation", "sensitive_information"],
+  "control_category": "detection",
+  "mitigates": [
+    "obj-sensitive-information-disclosure-resilience",
+    "obj-system-prompt-disclosure-resilience",
+    "obj-tool-misuse-resilience",
+    "af-prompt-leakage"
+  ],
+  "implementation_guidance": [
+    "Check responses for sensitive information, protected prompt content, and unsafe downstream instructions.",
+    "Use deterministic validators for structured outputs before rendering, execution, or storage.",
+    "Redact or block responses that exceed the user's authorization context."
+  ],
+  "verification_methods": [
+    "Evaluate responses with sensitive-data and system-prompt disclosure rules.",
+    "Confirm downstream consumers reject invalid or unsafe model output.",
+    "Test benign responses to measure overblocking and business impact."
+  ],
+  "owasp_mappings": [
+    "owasp-llm02-2025-sensitive-information-disclosure",
+    "owasp-llm05-2025-improper-output-handling",
+    "owasp-llm07-2025-system-prompt-leakage"
+  ],
+  "mitre_mappings": [],
+  "references": ["ref-owasp-llm-top-10-2025", "ref-nist-ai-rmf-1-0"],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

@@ -35,6 +35,7 @@ backend/
 ## Attack Modules
 
 - `backend/attacks/datasets/*.json`: curated attack entries with OWASP mappings, source references, success criteria, and mutation-ready tags.
+- `backend/attacks/datasets/knowledge_dataset/`: normalized planning knowledge for the future AI Planning Agent. It stores objectives, attack families, strategies, evaluation rules, model profiles, mitigations, taxonomies, references, and JSON Schemas, but intentionally does not store attack prompts or payloads.
 - `backend/attacks/library.py`: shared dataset loader with filtering, random selection, placeholder rendering, and `AttackPrompt` conversion.
 - `backend/attacks/prompt_injection.py`: PromptInject, garak, and ps-fuzz style direct injection probes.
 - `backend/attacks/jailbreak.py`: Crescendo, AdvBench, HarmBench, and FlipAttack style probes using safe placeholders for restricted behaviors.

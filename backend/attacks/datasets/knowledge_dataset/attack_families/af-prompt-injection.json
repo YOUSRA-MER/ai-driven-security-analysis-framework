@@ -1,0 +1,25 @@
+{
+  "id": "af-prompt-injection",
+  "name": "Prompt Injection",
+  "description": "Direct untrusted input attempts to override, redirect, or weaken trusted application instructions.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["prompt_injection", "direct_input", "instruction_hierarchy"],
+  "scope": "direct",
+  "planning_use": "Select when the primary risk is user-controlled text conflicting with system, developer, or application instructions.",
+  "recommended_strategies": [
+    "strat-developer-role-framing",
+    "strat-security-audit-framing",
+    "strat-authority-framing"
+  ],
+  "compatible_conversation_styles": ["style-single-turn-probe", "style-bounded-multi-turn-probe"],
+  "recommended_prompt_mutations": ["mut-rephrasing", "mut-role-switching", "mut-tone-modification", "mut-translation"],
+  "evaluation_rules": ["eval-policy-bypass", "eval-refusal-quality"],
+  "related_families": ["af-indirect-prompt-injection", "af-jailbreak", "af-context-manipulation"],
+  "mitigations": ["mit-prompt-isolation", "mit-input-sanitization"],
+  "owasp_mappings": ["owasp-llm01-2025-prompt-injection"],
+  "mitre_mappings": ["atlas-aml-t0051-prompt-injection", "atlas-aml-t0051-000-llm-prompt-injection-direct"],
+  "references": ["ref-owasp-llm01-prompt-injection-2025", "ref-mitre-atlas"],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

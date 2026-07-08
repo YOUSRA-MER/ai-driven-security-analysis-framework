@@ -1,0 +1,25 @@
+{
+  "id": "af-roleplay",
+  "name": "Roleplay",
+  "description": "Persona, scenario, or authority framing that may change policy, refusal, or disclosure behavior.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["roleplay", "persona", "authority"],
+  "scope": "conversation",
+  "planning_use": "Select when claimed roles, fictional scenarios, or authority framing may affect how the target handles boundaries.",
+  "recommended_strategies": [
+    "strat-role-assumption",
+    "strat-authority-framing",
+    "strat-gradual-escalation"
+  ],
+  "compatible_conversation_styles": ["style-single-turn-probe", "style-bounded-multi-turn-probe"],
+  "recommended_prompt_mutations": ["mut-role-switching", "mut-tone-modification", "mut-rephrasing"],
+  "evaluation_rules": ["eval-policy-bypass", "eval-refusal-quality"],
+  "related_families": ["af-jailbreak", "af-prompt-injection"],
+  "mitigations": ["mit-input-sanitization", "mit-output-filtering"],
+  "owasp_mappings": ["owasp-llm01-2025-prompt-injection"],
+  "mitre_mappings": ["atlas-aml-t0054-llm-jailbreak"],
+  "references": ["ref-microsoft-pyrit", "ref-nvidia-garak"],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

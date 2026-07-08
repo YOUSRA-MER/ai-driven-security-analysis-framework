@@ -1,0 +1,20 @@
+{
+  "id": "owasp-llm07-2025-system-prompt-leakage",
+  "name": "OWASP LLM07 System Prompt Leakage",
+  "description": "OWASP category for exposure of system prompts, hidden instructions, routing policies, or application guardrail configuration.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["owasp", "llm07", "system_prompt"],
+  "owasp_version": "2025",
+  "category_id": "LLM07",
+  "category_name": "System Prompt Leakage",
+  "planning_relevance": "Use for prompt leakage, system prompt disclosure, and hidden instruction exposure objectives.",
+  "related_entities": [
+    "obj-system-prompt-disclosure-resilience",
+    "obj-prompt-leakage-resilience",
+    "af-prompt-leakage"
+  ],
+  "references": ["ref-owasp-llm-top-10-2025"],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

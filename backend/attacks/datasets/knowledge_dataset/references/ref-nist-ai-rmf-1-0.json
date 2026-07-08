@@ -1,0 +1,17 @@
+{
+  "id": "ref-nist-ai-rmf-1-0",
+  "name": "NIST AI Risk Management Framework 1.0",
+  "description": "NIST framework for managing risks of artificial intelligence systems through governance, mapping, measurement, and management.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["nist", "ai_rmf", "risk_management"],
+  "source_type": "standard",
+  "authors": ["National Institute of Standards and Technology"],
+  "published_at": "2023",
+  "url": "https://www.nist.gov/itl/ai-risk-management-framework",
+  "citation": "NIST Artificial Intelligence Risk Management Framework 1.0, 2023.",
+  "relevance": "Supports risk governance, measurement discipline, oversight, and control verification for AI red teaming programs.",
+  "references": [],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

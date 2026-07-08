@@ -1,0 +1,25 @@
+{
+  "id": "af-indirect-prompt-injection",
+  "name": "Indirect Prompt Injection",
+  "description": "Untrusted external content influences the model through retrieval, browsing, document ingestion, or tool outputs.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["indirect_prompt_injection", "external_content", "tool_output"],
+  "scope": "indirect",
+  "planning_use": "Select when the target processes external content that may be interpreted as instructions instead of data.",
+  "recommended_strategies": [
+    "strat-retrieval-source-conflict",
+    "strat-tool-boundary-check",
+    "strat-multi-turn-interaction"
+  ],
+  "compatible_conversation_styles": ["style-retrieval-augmented-probe", "style-tool-mediated-probe", "style-bounded-multi-turn-probe"],
+  "recommended_prompt_mutations": ["mut-context-expansion", "mut-rephrasing"],
+  "evaluation_rules": ["eval-policy-bypass", "eval-tool-abuse-detection", "eval-sensitive-information-leakage"],
+  "related_families": ["af-prompt-injection", "af-retrieval-attacks", "af-tool-abuse"],
+  "mitigations": ["mit-prompt-isolation", "mit-input-sanitization", "mit-tool-permission-control"],
+  "owasp_mappings": ["owasp-llm01-2025-prompt-injection"],
+  "mitre_mappings": ["atlas-aml-t0051-prompt-injection", "atlas-aml-t0051-001-llm-prompt-injection-indirect"],
+  "references": ["ref-indirect-prompt-injection-paper", "ref-agentdojo"],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

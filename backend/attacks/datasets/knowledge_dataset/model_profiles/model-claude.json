@@ -1,0 +1,31 @@
+{
+  "id": "model-claude",
+  "name": "Claude Model Family",
+  "description": "Planning profile for Claude-style assistant deployments where constitutional safety behavior, tool use, and enterprise context may be relevant.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["claude", "assistant", "provider_model"],
+  "profile_type": "provider",
+  "capabilities": ["chat_completion", "instruction_following", "tool_use", "long_context"],
+  "context_window_class": "very_large",
+  "tool_access": "unknown",
+  "risk_sensitivities": [
+    {
+      "entity_id": "af-jailbreak",
+      "sensitivity": "medium",
+      "rationale": "Planner should evaluate refusal consistency across role, tone, and multi-turn variants."
+    },
+    {
+      "entity_id": "af-tool-abuse",
+      "sensitivity": "high",
+      "rationale": "Agent deployments need controls around tool permissions and human approval."
+    }
+  ],
+  "evaluation_notes": [
+    "Capture whether the application adds enterprise retrieval or tool layers.",
+    "Compare refusal quality across direct, role-framed, and long-context variants."
+  ],
+  "references": ["ref-anthropic-responsible-scaling-policy", "ref-nist-ai-rmf-1-0"],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

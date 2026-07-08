@@ -1,0 +1,25 @@
+{
+  "id": "af-tool-abuse",
+  "name": "Tool Abuse",
+  "description": "Unsafe or unauthorized tool selection, argument generation, permission use, or action execution by an LLM application.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["tool_use", "agency", "permissions"],
+  "scope": "tool",
+  "planning_use": "Select when the target can call functions, plugins, APIs, browser actions, or external services.",
+  "recommended_strategies": [
+    "strat-tool-boundary-check",
+    "strat-authority-framing",
+    "strat-multi-turn-interaction"
+  ],
+  "compatible_conversation_styles": ["style-tool-mediated-probe", "style-bounded-multi-turn-probe"],
+  "recommended_prompt_mutations": ["mut-rephrasing", "mut-tone-modification", "mut-context-expansion"],
+  "evaluation_rules": ["eval-tool-abuse-detection", "eval-sensitive-information-leakage", "eval-policy-bypass"],
+  "related_families": ["af-indirect-prompt-injection", "af-retrieval-attacks"],
+  "mitigations": ["mit-least-privilege", "mit-human-approval", "mit-tool-permission-control"],
+  "owasp_mappings": ["owasp-llm05-2025-improper-output-handling", "owasp-llm06-2025-excessive-agency"],
+  "mitre_mappings": ["atlas-aml-t0051-001-llm-prompt-injection-indirect"],
+  "references": ["ref-agentdojo", "ref-owasp-llm-top-10-2025"],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

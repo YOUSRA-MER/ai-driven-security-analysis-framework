@@ -1,0 +1,31 @@
+{
+  "id": "model-mistral",
+  "name": "Mistral Model Family",
+  "description": "Planning profile for Mistral-style open and hosted deployments where application guardrails and tool configuration drive many security outcomes.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["mistral", "open_weight", "provider_model"],
+  "profile_type": "provider",
+  "capabilities": ["chat_completion", "instruction_following", "tool_use", "fine_tuning"],
+  "context_window_class": "large",
+  "tool_access": "unknown",
+  "risk_sensitivities": [
+    {
+      "entity_id": "af-prompt-injection",
+      "sensitivity": "medium",
+      "rationale": "Application prompt isolation and guardrails determine whether untrusted content changes behavior."
+    },
+    {
+      "entity_id": "af-context-manipulation",
+      "sensitivity": "medium",
+      "rationale": "Long-context and self-hosted variants should be tested for source labeling and policy drift."
+    }
+  ],
+  "evaluation_notes": [
+    "Capture deployment mode, guardrail layer, and tool exposure.",
+    "Use baseline and mutated variants to detect configuration-specific differences."
+  ],
+  "references": ["ref-nvidia-garak", "ref-nist-ai-rmf-1-0"],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "attack_family.schema.json",
+  "title": "Knowledge Attack Family",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "description", "version", "status", "scope", "planning_use", "recommended_strategies", "compatible_conversation_styles", "evaluation_rules", "created_at", "updated_at"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^af-[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "name": {"type": "string", "minLength": 3, "maxLength": 120},
+    "description": {"type": "string", "minLength": 20, "maxLength": 1000},
+    "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "status": {"type": "string", "enum": ["draft", "active", "deprecated"]},
+    "tags": {"type": "array", "items": {"type": "string", "pattern": "^[a-z0-9]+(?:_[a-z0-9]+)*$"}, "uniqueItems": true},
+    "scope": {"type": "string", "enum": ["direct", "indirect", "retrieval", "tool", "conversation", "data"]},
+    "planning_use": {"type": "string", "minLength": 20, "maxLength": 500},
+    "recommended_strategies": {"type": "array", "minItems": 1, "items": {"type": "string", "pattern": "^strat-[a-z0-9]+(?:-[a-z0-9]+)*$"}, "uniqueItems": true},
+    "compatible_conversation_styles": {"type": "array", "minItems": 1, "items": {"type": "string", "pattern": "^style-[a-z0-9]+(?:-[a-z0-9]+)*$"}, "uniqueItems": true},
+    "recommended_prompt_mutations": {"type": "array", "items": {"type": "string", "pattern": "^mut-[a-z0-9]+(?:-[a-z0-9]+)*$"}, "uniqueItems": true},
+    "evaluation_rules": {"type": "array", "minItems": 1, "items": {"type": "string", "pattern": "^eval-[a-z0-9]+(?:-[a-z0-9]+)*$"}, "uniqueItems": true},
+    "related_families": {"type": "array", "items": {"type": "string", "pattern": "^af-[a-z0-9]+(?:-[a-z0-9]+)*$"}, "uniqueItems": true},
+    "mitigations": {"type": "array", "items": {"type": "string", "pattern": "^mit-[a-z0-9]+(?:-[a-z0-9]+)*$"}, "uniqueItems": true},
+    "owasp_mappings": {"type": "array", "items": {"type": "string", "pattern": "^owasp-[a-z0-9]+(?:-[a-z0-9]+)*$"}, "uniqueItems": true},
+    "mitre_mappings": {"type": "array", "items": {"type": "string", "pattern": "^atlas-[a-z0-9]+(?:-[a-z0-9]+)*$"}, "uniqueItems": true},
+    "references": {"type": "array", "items": {"type": "string", "pattern": "^ref-[a-z0-9]+(?:-[a-z0-9]+)*$"}, "uniqueItems": true},
+    "created_at": {"type": "string", "format": "date"},
+    "updated_at": {"type": "string", "format": "date"}
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "id": "ref-nvidia-garak",
+  "name": "NVIDIA Garak",
+  "description": "Generative AI red-teaming and assessment kit for probing LLM and dialog-system weaknesses.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["garak", "scanner", "red_teaming"],
+  "source_type": "repository",
+  "authors": ["NVIDIA", "Leon Derczynski"],
+  "published_at": "2023",
+  "url": "https://github.com/NVIDIA/garak",
+  "citation": "garak: Generative AI Red-teaming and Assessment Kit.",
+  "relevance": "Informs probe, generator, detector, and reporting concepts for structured LLM security assessment.",
+  "references": [],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

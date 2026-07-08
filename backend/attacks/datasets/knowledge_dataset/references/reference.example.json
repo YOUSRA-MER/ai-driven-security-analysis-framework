@@ -1,0 +1,17 @@
+{
+  "id": "ref-example-owasp-llm-top-10-2025",
+  "name": "OWASP Top 10 for Large Language Model Applications 2025",
+  "description": "Reference record for OWASP LLM Top 10 risk categories used by planning, evaluation, and reporting entities.",
+  "version": "0.1.0",
+  "status": "draft",
+  "tags": ["owasp", "standard", "llm_security"],
+  "source_type": "standard",
+  "authors": ["OWASP Foundation"],
+  "published_at": "2025",
+  "url": "https://owasp.org/www-project-top-10-for-large-language-model-applications/",
+  "citation": "OWASP Top 10 for Large Language Model Applications, 2025.",
+  "relevance": "Provides risk taxonomy language for mapping objectives, findings, and mitigations in LLM security reports.",
+  "references": [],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

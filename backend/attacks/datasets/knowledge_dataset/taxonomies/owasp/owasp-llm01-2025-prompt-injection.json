@@ -1,0 +1,23 @@
+{
+  "id": "owasp-llm01-2025-prompt-injection",
+  "name": "OWASP LLM01 Prompt Injection",
+  "description": "OWASP category for direct, indirect, multimodal, and obfuscated inputs that alter intended LLM behavior.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["owasp", "llm01", "prompt_injection"],
+  "owasp_version": "2025",
+  "category_id": "LLM01",
+  "category_name": "Prompt Injection",
+  "planning_relevance": "Use for objectives involving instruction hierarchy failure, jailbreak, indirect prompt injection, tool-output manipulation, or untrusted content steering.",
+  "related_entities": [
+    "obj-prompt-injection-resilience",
+    "obj-indirect-prompt-injection-resilience",
+    "obj-jailbreak-resilience",
+    "af-prompt-injection",
+    "af-indirect-prompt-injection",
+    "af-jailbreak"
+  ],
+  "references": ["ref-owasp-llm-top-10-2025", "ref-owasp-llm01-prompt-injection-2025"],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

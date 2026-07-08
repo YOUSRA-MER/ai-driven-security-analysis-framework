@@ -1,0 +1,19 @@
+{
+  "id": "owasp-llm04-2025-data-and-model-poisoning",
+  "name": "OWASP LLM04 Data and Model Poisoning",
+  "description": "OWASP category for compromised training, fine-tuning, embedding, or retrieval data that affects model or application behavior.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["owasp", "llm04", "poisoning"],
+  "owasp_version": "2025",
+  "category_id": "LLM04",
+  "category_name": "Data and Model Poisoning",
+  "planning_relevance": "Use for RAG poisoning and retrieval integrity objectives where malicious or untrusted knowledge changes generated outputs.",
+  "related_entities": [
+    "obj-rag-poisoning-resilience",
+    "af-retrieval-attacks"
+  ],
+  "references": ["ref-owasp-llm-top-10-2025"],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

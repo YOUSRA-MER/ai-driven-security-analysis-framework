@@ -1,0 +1,25 @@
+{
+  "id": "af-jailbreak",
+  "name": "Jailbreak",
+  "description": "Attempts to bypass safety behavior, refusal boundaries, or application policy through framing, state, or interaction patterns.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["jailbreak", "policy_bypass", "refusal"],
+  "scope": "conversation",
+  "planning_use": "Select when the objective is to test whether safety or application policies remain consistent under adversarial framing or multi-turn pressure.",
+  "recommended_strategies": [
+    "strat-gradual-escalation",
+    "strat-role-assumption",
+    "strat-refusal-boundary-comparison"
+  ],
+  "compatible_conversation_styles": ["style-single-turn-probe", "style-bounded-multi-turn-probe"],
+  "recommended_prompt_mutations": ["mut-rephrasing", "mut-role-switching", "mut-tone-modification", "mut-translation"],
+  "evaluation_rules": ["eval-policy-bypass", "eval-refusal-quality"],
+  "related_families": ["af-roleplay", "af-prompt-injection", "af-context-manipulation"],
+  "mitigations": ["mit-input-sanitization", "mit-output-filtering"],
+  "owasp_mappings": ["owasp-llm01-2025-prompt-injection"],
+  "mitre_mappings": ["atlas-aml-t0054-llm-jailbreak"],
+  "references": ["ref-microsoft-pyrit", "ref-nvidia-garak"],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

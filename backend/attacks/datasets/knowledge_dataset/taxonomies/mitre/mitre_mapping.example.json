@@ -1,0 +1,20 @@
+{
+  "id": "atlas-example-aml-t0051-prompt-injection",
+  "name": "MITRE ATLAS Prompt Injection",
+  "description": "MITRE ATLAS mapping for prompt injection style adversarial interaction with AI systems.",
+  "version": "0.1.0",
+  "status": "draft",
+  "tags": ["mitre_atlas", "prompt_injection"],
+  "atlas_id": "AML.T0051",
+  "atlas_name": "Prompt Injection",
+  "mapping_type": "technique",
+  "planning_relevance": "Use this mapping to connect prompt injection planning, evidence, and reporting to MITRE ATLAS terminology.",
+  "related_entities": [
+    "obj-example-instruction-hierarchy-resilience",
+    "af-example-direct-prompt-injection",
+    "mit-example-enforce-instruction-priority"
+  ],
+  "references": ["ref-example-owasp-llm-top-10-2025"],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

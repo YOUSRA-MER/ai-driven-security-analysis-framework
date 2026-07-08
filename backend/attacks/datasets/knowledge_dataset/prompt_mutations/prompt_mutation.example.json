@@ -1,0 +1,25 @@
+{
+  "id": "mut-example-framing-variation",
+  "name": "Framing Variation",
+  "description": "A safe mutation concept that varies the benign framing of an authorized test while preserving the same security objective.",
+  "version": "0.1.0",
+  "status": "draft",
+  "tags": ["mutation", "framing", "retrieval_variation"],
+  "mutation_goal": "Increase coverage of how the target handles semantically equivalent authorized test requests.",
+  "mutation_class": "semantic_framing",
+  "allowed_transformations": [
+    "Change audience framing between audit, QA, and policy validation contexts.",
+    "Vary concise versus detailed wording while preserving the same objective.",
+    "Adjust neutral tone without adding payloads or harmful operational details."
+  ],
+  "prohibited_content": [
+    "Concrete attack prompts",
+    "Jailbreak strings",
+    "Exploit payloads",
+    "Step-by-step harmful instructions"
+  ],
+  "compatible_strategies": ["strat-example-instruction-priority-probe"],
+  "references": [],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

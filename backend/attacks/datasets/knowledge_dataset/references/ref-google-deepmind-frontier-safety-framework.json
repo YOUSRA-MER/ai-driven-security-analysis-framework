@@ -1,0 +1,17 @@
+{
+  "id": "ref-google-deepmind-frontier-safety-framework",
+  "name": "Google DeepMind Frontier Safety Framework",
+  "description": "Google DeepMind framework for evaluating and managing risks from frontier AI models.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["google_deepmind", "frontier_safety", "model_evaluation"],
+  "source_type": "documentation",
+  "authors": ["Google DeepMind"],
+  "published_at": "2024",
+  "url": "https://deepmind.google/discover/blog/introducing-the-frontier-safety-framework/",
+  "citation": "Google DeepMind Frontier Safety Framework.",
+  "relevance": "Supports risk-tiering, model evaluation, and deployment-control reasoning for powerful model profiles.",
+  "references": [],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

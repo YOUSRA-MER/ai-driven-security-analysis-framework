@@ -1,0 +1,20 @@
+{
+  "id": "atlas-aml-t0051-000-llm-prompt-injection-direct",
+  "name": "MITRE ATLAS LLM Prompt Injection Direct",
+  "description": "MITRE ATLAS mapping for direct prompt injection against an LLM through user-controlled input.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["mitre_atlas", "prompt_injection", "direct_input"],
+  "atlas_id": "AML.T0051.000",
+  "atlas_name": "LLM Prompt Injection: Direct",
+  "mapping_type": "subtechnique",
+  "planning_relevance": "Use when the user's supplied content is the primary untrusted channel that may conflict with trusted instructions.",
+  "related_entities": [
+    "obj-prompt-injection-resilience",
+    "af-prompt-injection",
+    "strat-security-audit-framing"
+  ],
+  "references": ["ref-mitre-atlas", "ref-owasp-llm01-prompt-injection-2025"],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

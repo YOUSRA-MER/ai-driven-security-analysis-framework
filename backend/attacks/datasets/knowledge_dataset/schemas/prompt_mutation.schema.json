@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "prompt_mutation.schema.json",
+  "title": "Knowledge Prompt Mutation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "description", "version", "status", "mutation_goal", "mutation_class", "allowed_transformations", "prohibited_content", "created_at", "updated_at"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^mut-[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "name": {"type": "string", "minLength": 3, "maxLength": 120},
+    "description": {"type": "string", "minLength": 20, "maxLength": 1000},
+    "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "status": {"type": "string", "enum": ["draft", "active", "deprecated"]},
+    "tags": {"type": "array", "items": {"type": "string", "pattern": "^[a-z0-9]+(?:_[a-z0-9]+)*$"}, "uniqueItems": true},
+    "mutation_goal": {"type": "string", "minLength": 20, "maxLength": 300},
+    "mutation_class": {"type": "string", "enum": ["semantic_framing", "format_variation", "tone_variation", "context_wrapping", "language_variation", "turn_order_variation"]},
+    "allowed_transformations": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 10}},
+    "prohibited_content": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 5}},
+    "compatible_strategies": {"type": "array", "items": {"type": "string", "pattern": "^strat-[a-z0-9]+(?:-[a-z0-9]+)*$"}, "uniqueItems": true},
+    "references": {"type": "array", "items": {"type": "string", "pattern": "^ref-[a-z0-9]+(?:-[a-z0-9]+)*$"}, "uniqueItems": true},
+    "created_at": {"type": "string", "format": "date"},
+    "updated_at": {"type": "string", "format": "date"}
+  }
+}

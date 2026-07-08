@@ -1,0 +1,20 @@
+{
+  "id": "owasp-example-llm01-2025-prompt-injection",
+  "name": "OWASP LLM01 Prompt Injection",
+  "description": "OWASP LLM Top 10 category for direct and indirect prompt injection risks in LLM applications.",
+  "version": "0.1.0",
+  "status": "draft",
+  "tags": ["owasp", "llm01", "prompt_injection"],
+  "owasp_version": "2025",
+  "category_id": "LLM01",
+  "category_name": "Prompt Injection",
+  "planning_relevance": "Use this mapping when planning tests for instruction hierarchy bypass, untrusted content conflicts, or indirect instruction injection.",
+  "related_entities": [
+    "obj-example-instruction-hierarchy-resilience",
+    "af-example-direct-prompt-injection",
+    "mit-example-enforce-instruction-priority"
+  ],
+  "references": ["ref-example-owasp-llm-top-10-2025"],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

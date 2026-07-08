@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "objective.schema.json",
+  "title": "Knowledge Objective",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "description", "version", "status", "user_intent_patterns", "security_problem", "planning_questions", "recommended_attack_families", "recommended_evaluation_rules", "created_at", "updated_at"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^obj-[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "name": {"type": "string", "minLength": 3, "maxLength": 120},
+    "description": {"type": "string", "minLength": 20, "maxLength": 1000},
+    "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "status": {"type": "string", "enum": ["draft", "active", "deprecated"]},
+    "tags": {"type": "array", "items": {"type": "string", "pattern": "^[a-z0-9]+(?:_[a-z0-9]+)*$"}, "uniqueItems": true},
+    "user_intent_patterns": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 3}},
+    "security_problem": {"type": "string", "minLength": 10, "maxLength": 300},
+    "planning_questions": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 10}},
+    "recommended_attack_families": {"type": "array", "minItems": 1, "items": {"type": "string", "pattern": "^af-[a-z0-9]+(?:-[a-z0-9]+)*$"}, "uniqueItems": true},
+    "recommended_evaluation_rules": {"type": "array", "minItems": 1, "items": {"type": "string", "pattern": "^eval-[a-z0-9]+(?:-[a-z0-9]+)*$"}, "uniqueItems": true},
+    "owasp_mappings": {"type": "array", "items": {"type": "string", "pattern": "^owasp-[a-z0-9]+(?:-[a-z0-9]+)*$"}, "uniqueItems": true},
+    "mitre_mappings": {"type": "array", "items": {"type": "string", "pattern": "^atlas-[a-z0-9]+(?:-[a-z0-9]+)*$"}, "uniqueItems": true},
+    "recommended_mitigations": {"type": "array", "items": {"type": "string", "pattern": "^mit-[a-z0-9]+(?:-[a-z0-9]+)*$"}, "uniqueItems": true},
+    "related_objectives": {"type": "array", "items": {"type": "string", "pattern": "^obj-[a-z0-9]+(?:-[a-z0-9]+)*$"}, "uniqueItems": true},
+    "references": {"type": "array", "items": {"type": "string", "pattern": "^ref-[a-z0-9]+(?:-[a-z0-9]+)*$"}, "uniqueItems": true},
+    "created_at": {"type": "string", "format": "date"},
+    "updated_at": {"type": "string", "format": "date"}
+  }
+}

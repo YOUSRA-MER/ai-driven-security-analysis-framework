@@ -1,0 +1,29 @@
+{
+  "id": "af-retrieval-attacks",
+  "name": "Retrieval Attacks",
+  "description": "Risks involving retrieved documents, embeddings, vector search, source trust, citation behavior, or retrieval-augmented generation.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["retrieval", "rag", "embeddings"],
+  "scope": "retrieval",
+  "planning_use": "Select when the target uses RAG, document search, external web content, enterprise knowledge, or vector databases.",
+  "recommended_strategies": [
+    "strat-retrieval-source-conflict",
+    "strat-multi-turn-interaction",
+    "strat-debug-session-framing"
+  ],
+  "compatible_conversation_styles": ["style-retrieval-augmented-probe", "style-bounded-multi-turn-probe"],
+  "recommended_prompt_mutations": ["mut-context-expansion", "mut-rephrasing", "mut-translation"],
+  "evaluation_rules": ["eval-policy-bypass", "eval-sensitive-information-leakage", "eval-system-prompt-disclosure"],
+  "related_families": ["af-indirect-prompt-injection", "af-context-manipulation", "af-tool-abuse"],
+  "mitigations": ["mit-prompt-isolation", "mit-input-sanitization", "mit-output-filtering"],
+  "owasp_mappings": [
+    "owasp-llm04-2025-data-and-model-poisoning",
+    "owasp-llm08-2025-vector-and-embedding-weaknesses",
+    "owasp-llm01-2025-prompt-injection"
+  ],
+  "mitre_mappings": ["atlas-aml-t0051-001-llm-prompt-injection-indirect"],
+  "references": ["ref-indirect-prompt-injection-paper", "ref-agentdojo"],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

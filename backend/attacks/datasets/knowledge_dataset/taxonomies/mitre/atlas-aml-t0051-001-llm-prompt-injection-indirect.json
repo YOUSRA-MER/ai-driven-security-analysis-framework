@@ -1,0 +1,21 @@
+{
+  "id": "atlas-aml-t0051-001-llm-prompt-injection-indirect",
+  "name": "MITRE ATLAS LLM Prompt Injection Indirect",
+  "description": "MITRE ATLAS mapping for indirect prompt injection through external content, retrieved material, or tool outputs.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["mitre_atlas", "indirect_prompt_injection", "external_content"],
+  "atlas_id": "AML.T0051.001",
+  "atlas_name": "LLM Prompt Injection: Indirect",
+  "mapping_type": "subtechnique",
+  "planning_relevance": "Use when untrusted external data can be interpreted as instructions during retrieval, browsing, document processing, or tool use.",
+  "related_entities": [
+    "obj-indirect-prompt-injection-resilience",
+    "obj-rag-poisoning-resilience",
+    "af-indirect-prompt-injection",
+    "af-retrieval-attacks"
+  ],
+  "references": ["ref-mitre-atlas", "ref-indirect-prompt-injection-paper"],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

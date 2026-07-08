@@ -1,0 +1,20 @@
+{
+  "id": "owasp-llm05-2025-improper-output-handling",
+  "name": "OWASP LLM05 Improper Output Handling",
+  "description": "OWASP category for insufficient validation, sanitization, or handling of LLM outputs before downstream use.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["owasp", "llm05", "output_handling"],
+  "owasp_version": "2025",
+  "category_id": "LLM05",
+  "category_name": "Improper Output Handling",
+  "planning_relevance": "Use when the planner evaluates whether generated output can trigger unsafe rendering, execution, tool calls, or downstream decisions.",
+  "related_entities": [
+    "obj-tool-misuse-resilience",
+    "af-tool-abuse",
+    "mit-output-filtering"
+  ],
+  "references": ["ref-owasp-llm-top-10-2025"],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

@@ -1,0 +1,26 @@
+{
+  "id": "model-example-generic-tool-free-chat",
+  "name": "Generic Tool-Free Chat Model",
+  "description": "A provider-neutral profile for chat models without external tools, retrieval, browsing, or action-taking integrations.",
+  "version": "0.1.0",
+  "status": "draft",
+  "tags": ["generic", "chat", "no_tools"],
+  "profile_type": "generic",
+  "capabilities": ["chat_completion", "instruction_following"],
+  "context_window_class": "unknown",
+  "tool_access": "none",
+  "risk_sensitivities": [
+    {
+      "entity_id": "af-example-direct-prompt-injection",
+      "sensitivity": "medium",
+      "rationale": "Instruction hierarchy behavior can be evaluated even without tool or retrieval access."
+    }
+  ],
+  "evaluation_notes": [
+    "Do not score tool misuse risks for this profile.",
+    "Prioritize instruction hierarchy and refusal consistency evidence."
+  ],
+  "references": [],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

@@ -1,0 +1,21 @@
+{
+  "id": "af-example-direct-prompt-injection",
+  "name": "Direct Prompt Injection",
+  "description": "A family of tests that assess whether direct user input can override trusted instructions or alter intended application behavior.",
+  "version": "0.1.0",
+  "status": "draft",
+  "tags": ["prompt_injection", "direct_input", "instruction_hierarchy"],
+  "scope": "direct",
+  "planning_use": "Select when the tested system accepts free-form user messages and the objective concerns instruction priority, policy adherence, or unauthorized behavior changes.",
+  "recommended_strategies": ["strat-example-instruction-priority-probe"],
+  "compatible_conversation_styles": ["style-example-single-turn-probe"],
+  "recommended_prompt_mutations": ["mut-example-framing-variation"],
+  "evaluation_rules": ["eval-example-instruction-hierarchy-breach"],
+  "related_families": [],
+  "mitigations": ["mit-example-enforce-instruction-priority"],
+  "owasp_mappings": ["owasp-example-llm01-2025-prompt-injection"],
+  "mitre_mappings": ["atlas-example-aml-t0051-prompt-injection"],
+  "references": ["ref-example-owasp-llm-top-10-2025"],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

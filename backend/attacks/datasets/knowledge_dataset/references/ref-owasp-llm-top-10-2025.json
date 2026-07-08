@@ -1,0 +1,17 @@
+{
+  "id": "ref-owasp-llm-top-10-2025",
+  "name": "OWASP Top 10 for LLM Applications 2025",
+  "description": "OWASP GenAI Security Project risk taxonomy for large language model and generative AI applications.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["owasp", "llm_security", "risk_taxonomy"],
+  "source_type": "standard",
+  "authors": ["OWASP Foundation"],
+  "published_at": "2025",
+  "url": "https://genai.owasp.org/llm-top-10/",
+  "citation": "OWASP Top 10 for Large Language Model Applications, 2025.",
+  "relevance": "Primary taxonomy for mapping LLM application risks, evaluations, mitigations, and reports.",
+  "references": [],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

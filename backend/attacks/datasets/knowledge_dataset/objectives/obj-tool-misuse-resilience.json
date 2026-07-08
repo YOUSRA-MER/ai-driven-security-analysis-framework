@@ -1,0 +1,28 @@
+{
+  "id": "obj-tool-misuse-resilience",
+  "name": "Tool Misuse Resilience",
+  "description": "Assess whether tool selection, arguments, and execution remain constrained by user intent, authorization, and approval requirements.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["tool_use", "agent_security", "permissions"],
+  "user_intent_patterns": [
+    "test tool misuse",
+    "evaluate agent tool safety",
+    "check whether the assistant can perform unauthorized actions"
+  ],
+  "security_problem": "The target may invoke tools, APIs, or external actions beyond the user's intent, privilege, or approval state.",
+  "planning_questions": [
+    "Which tools are available and what permissions do they carry?",
+    "Can the harness distinguish proposed, approved, and executed tool actions?",
+    "Which actions require human confirmation or reduced privilege?"
+  ],
+  "recommended_attack_families": ["af-tool-abuse", "af-indirect-prompt-injection"],
+  "recommended_evaluation_rules": ["eval-tool-abuse-detection", "eval-sensitive-information-leakage"],
+  "owasp_mappings": ["owasp-llm05-2025-improper-output-handling", "owasp-llm06-2025-excessive-agency"],
+  "mitre_mappings": ["atlas-aml-t0051-001-llm-prompt-injection-indirect"],
+  "recommended_mitigations": ["mit-least-privilege", "mit-human-approval", "mit-tool-permission-control"],
+  "related_objectives": ["obj-excessive-agency-resilience", "obj-data-exfiltration-resilience"],
+  "references": ["ref-agentdojo", "ref-owasp-llm-top-10-2025"],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

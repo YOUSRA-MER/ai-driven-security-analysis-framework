@@ -1,0 +1,31 @@
+{
+  "id": "model-llama",
+  "name": "Llama Model Family",
+  "description": "Planning profile for open-weight Llama-style deployments where safety behavior depends strongly on fine-tuning, system prompts, and application controls.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["llama", "open_weight", "self_hosted"],
+  "profile_type": "provider",
+  "capabilities": ["chat_completion", "instruction_following", "fine_tuning"],
+  "context_window_class": "large",
+  "tool_access": "unknown",
+  "risk_sensitivities": [
+    {
+      "entity_id": "af-jailbreak",
+      "sensitivity": "high",
+      "rationale": "Self-hosted or modified deployments may vary widely in safety tuning and refusal quality."
+    },
+    {
+      "entity_id": "af-prompt-leakage",
+      "sensitivity": "medium",
+      "rationale": "Prompt leakage risk depends on prompt composition and output filtering controls."
+    }
+  ],
+  "evaluation_notes": [
+    "Record model variant, fine-tuning, system prompt, and guardrail layers when known.",
+    "Do not assume provider-managed safety controls are present in local deployments."
+  ],
+  "references": ["ref-nvidia-garak", "ref-microsoft-pyrit"],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

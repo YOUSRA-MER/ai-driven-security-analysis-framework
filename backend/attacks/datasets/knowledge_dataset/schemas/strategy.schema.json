@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy.schema.json",
+  "title": "Knowledge Strategy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "description", "version", "status", "attack_family", "strategy_type", "recommended_turns", "conversation_styles", "evaluation_rules", "stop_conditions", "safety_constraints", "created_at", "updated_at"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^strat-[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "name": {"type": "string", "minLength": 3, "maxLength": 120},
+    "description": {"type": "string", "minLength": 20, "maxLength": 1000},
+    "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "status": {"type": "string", "enum": ["draft", "active", "deprecated"]},
+    "tags": {"type": "array", "items": {"type": "string", "pattern": "^[a-z0-9]+(?:_[a-z0-9]+)*$"}, "uniqueItems": true},
+    "attack_family": {"type": "string", "pattern": "^af-[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "strategy_type": {"type": "string", "enum": ["instruction_conflict", "retrieval_conflict", "tool_boundary", "data_boundary", "conversation_drift", "policy_consistency"]},
+    "recommended_turns": {"type": "object", "additionalProperties": false, "required": ["min", "max", "preferred"], "properties": {"min": {"type": "integer", "minimum": 1}, "max": {"type": "integer", "minimum": 1}, "preferred": {"type": "integer", "minimum": 1}}},
+    "conversation_styles": {"type": "array", "minItems": 1, "items": {"type": "string", "pattern": "^style-[a-z0-9]+(?:-[a-z0-9]+)*$"}, "uniqueItems": true},
+    "prompt_mutations": {"type": "array", "items": {"type": "string", "pattern": "^mut-[a-z0-9]+(?:-[a-z0-9]+)*$"}, "uniqueItems": true},
+    "evaluation_rules": {"type": "array", "minItems": 1, "items": {"type": "string", "pattern": "^eval-[a-z0-9]+(?:-[a-z0-9]+)*$"}, "uniqueItems": true},
+    "model_profiles": {"type": "array", "items": {"type": "string", "pattern": "^model-[a-z0-9]+(?:-[a-z0-9]+)*$"}, "uniqueItems": true},
+    "preconditions": {"type": "array", "items": {"type": "string", "minLength": 5}},
+    "stop_conditions": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 5}},
+    "safety_constraints": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 5}},
+    "references": {"type": "array", "items": {"type": "string", "pattern": "^ref-[a-z0-9]+(?:-[a-z0-9]+)*$"}, "uniqueItems": true},
+    "created_at": {"type": "string", "format": "date"},
+    "updated_at": {"type": "string", "format": "date"}
+  }
+}

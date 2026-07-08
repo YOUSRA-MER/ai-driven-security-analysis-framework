@@ -1,0 +1,21 @@
+{
+  "id": "owasp-llm02-2025-sensitive-information-disclosure",
+  "name": "OWASP LLM02 Sensitive Information Disclosure",
+  "description": "OWASP category for exposure of private, confidential, proprietary, or regulated information through model or application responses.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["owasp", "llm02", "sensitive_information"],
+  "owasp_version": "2025",
+  "category_id": "LLM02",
+  "category_name": "Sensitive Information Disclosure",
+  "planning_relevance": "Use for objectives focused on prompt leakage, data exfiltration, sensitive information disclosure, and response evidence handling.",
+  "related_entities": [
+    "obj-prompt-leakage-resilience",
+    "obj-data-exfiltration-resilience",
+    "obj-sensitive-information-disclosure-resilience",
+    "af-prompt-leakage"
+  ],
+  "references": ["ref-owasp-llm-top-10-2025"],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

@@ -1,0 +1,31 @@
+{
+  "id": "model-gemini",
+  "name": "Gemini Model Family",
+  "description": "Planning profile for Gemini-style multimodal and assistant deployments with possible retrieval, tool, and long-context integrations.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["gemini", "multimodal", "provider_model"],
+  "profile_type": "provider",
+  "capabilities": ["chat_completion", "instruction_following", "multimodal_input", "tool_use", "long_context"],
+  "context_window_class": "very_large",
+  "tool_access": "unknown",
+  "risk_sensitivities": [
+    {
+      "entity_id": "af-context-manipulation",
+      "sensitivity": "high",
+      "rationale": "Long-context deployments should be evaluated for instruction dilution, source confusion, and context boundary handling."
+    },
+    {
+      "entity_id": "af-retrieval-attacks",
+      "sensitivity": "medium",
+      "rationale": "Retrieval risk depends on how external content is labeled, filtered, and cited."
+    }
+  ],
+  "evaluation_notes": [
+    "Include context-length and source-label evidence in retrieval and context tests.",
+    "For multimodal deployments, treat extracted media text as untrusted input."
+  ],
+  "references": ["ref-google-deepmind-frontier-safety-framework", "ref-nist-ai-rmf-1-0"],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

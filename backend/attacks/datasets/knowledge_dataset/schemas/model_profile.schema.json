@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "model_profile.schema.json",
+  "title": "Knowledge Model Profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "description", "version", "status", "profile_type", "capabilities", "tool_access", "created_at", "updated_at"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^model-[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "name": {"type": "string", "minLength": 3, "maxLength": 120},
+    "description": {"type": "string", "minLength": 20, "maxLength": 1000},
+    "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "status": {"type": "string", "enum": ["draft", "active", "deprecated"]},
+    "tags": {"type": "array", "items": {"type": "string", "pattern": "^[a-z0-9]+(?:_[a-z0-9]+)*$"}, "uniqueItems": true},
+    "profile_type": {"type": "string", "enum": ["provider", "deployment", "capability", "generic"]},
+    "capabilities": {"type": "array", "minItems": 1, "items": {"type": "string", "pattern": "^[a-z0-9]+(?:_[a-z0-9]+)*$"}, "uniqueItems": true},
+    "context_window_class": {"type": "string", "enum": ["small", "medium", "large", "very_large", "unknown"]},
+    "tool_access": {"type": "string", "enum": ["none", "read_only", "write_capable", "external_action", "unknown"]},
+    "risk_sensitivities": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["entity_id", "sensitivity", "rationale"], "properties": {"entity_id": {"type": "string", "pattern": "^(af|obj)-[a-z0-9]+(?:-[a-z0-9]+)*$"}, "sensitivity": {"type": "string", "enum": ["low", "medium", "high", "unknown"]}, "rationale": {"type": "string", "minLength": 10}}}},
+    "evaluation_notes": {"type": "array", "items": {"type": "string", "minLength": 5}},
+    "references": {"type": "array", "items": {"type": "string", "pattern": "^ref-[a-z0-9]+(?:-[a-z0-9]+)*$"}, "uniqueItems": true},
+    "created_at": {"type": "string", "format": "date"},
+    "updated_at": {"type": "string", "format": "date"}
+  }
+}

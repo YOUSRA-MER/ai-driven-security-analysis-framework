@@ -1,0 +1,17 @@
+{
+  "id": "ref-openai-preparedness-framework",
+  "name": "OpenAI Preparedness Framework",
+  "description": "OpenAI framework for tracking, evaluating, and mitigating severe risks from advanced AI capabilities.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["openai", "preparedness", "model_evaluation"],
+  "source_type": "documentation",
+  "authors": ["OpenAI"],
+  "published_at": "2023",
+  "url": "https://openai.com/safety/preparedness/",
+  "citation": "OpenAI Preparedness Framework.",
+  "relevance": "Supports model-profile and evaluation reasoning for capability-aware safety assessment.",
+  "references": [],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

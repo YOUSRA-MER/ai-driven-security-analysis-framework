@@ -1,0 +1,30 @@
+{
+  "id": "mit-input-sanitization",
+  "name": "Input Sanitization",
+  "description": "Preprocess and classify user, retrieval, and tool inputs to reduce unsafe instructions, malformed content, and policy-conflicting data.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["input_filtering", "sanitization", "preprocessing"],
+  "control_category": "detection",
+  "mitigates": [
+    "obj-prompt-injection-resilience",
+    "obj-indirect-prompt-injection-resilience",
+    "obj-rag-poisoning-resilience",
+    "af-context-manipulation"
+  ],
+  "implementation_guidance": [
+    "Apply format validation and content classification before prompt assembly.",
+    "Normalize encodings and markup that may hide instruction-like content.",
+    "Route high-risk input through review, quarantine, or reduced-privilege handling."
+  ],
+  "verification_methods": [
+    "Run tests with direct, indirect, encoded, and multilingual instruction-conflict patterns.",
+    "Review logs for sanitizer decisions, bypasses, and false positives.",
+    "Measure whether sanitization preserves benign task utility."
+  ],
+  "owasp_mappings": ["owasp-llm01-2025-prompt-injection", "owasp-llm08-2025-vector-and-embedding-weaknesses"],
+  "mitre_mappings": ["atlas-aml-t0051-prompt-injection"],
+  "references": ["ref-owasp-llm01-prompt-injection-2025", "ref-nvidia-garak"],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

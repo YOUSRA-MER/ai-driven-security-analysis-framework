@@ -1,0 +1,17 @@
+{
+  "id": "ref-owasp-llm01-prompt-injection-2025",
+  "name": "OWASP LLM01 Prompt Injection",
+  "description": "OWASP guidance for direct, indirect, multimodal, and obfuscated prompt injection risks and mitigations.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["owasp", "prompt_injection", "mitigation"],
+  "source_type": "standard",
+  "authors": ["OWASP Foundation"],
+  "published_at": "2025",
+  "url": "https://genai.owasp.org/llmrisk/llm01-prompt-injection/",
+  "citation": "OWASP LLM01:2025 Prompt Injection.",
+  "relevance": "Grounds planning decisions for direct and indirect prompt injection, least privilege, content segregation, filtering, and adversarial testing.",
+  "references": ["ref-owasp-llm-top-10-2025"],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

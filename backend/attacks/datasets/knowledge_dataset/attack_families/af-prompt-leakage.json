@@ -1,0 +1,25 @@
+{
+  "id": "af-prompt-leakage",
+  "name": "Prompt Leakage",
+  "description": "Attempts to reveal system prompts, developer instructions, hidden routing policy, or internal guardrail configuration.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["prompt_leakage", "system_prompt", "sensitive_information"],
+  "scope": "data",
+  "planning_use": "Select when the target may expose protected prompts, hidden instructions, policy internals, or diagnostic context.",
+  "recommended_strategies": [
+    "strat-debug-session-framing",
+    "strat-security-audit-framing",
+    "strat-multi-turn-interaction"
+  ],
+  "compatible_conversation_styles": ["style-single-turn-probe", "style-bounded-multi-turn-probe"],
+  "recommended_prompt_mutations": ["mut-rephrasing", "mut-context-expansion", "mut-tone-modification"],
+  "evaluation_rules": ["eval-system-prompt-disclosure", "eval-sensitive-information-leakage"],
+  "related_families": ["af-prompt-injection", "af-context-manipulation"],
+  "mitigations": ["mit-prompt-isolation", "mit-output-filtering"],
+  "owasp_mappings": ["owasp-llm02-2025-sensitive-information-disclosure", "owasp-llm07-2025-system-prompt-leakage"],
+  "mitre_mappings": ["atlas-aml-t0051-prompt-injection"],
+  "references": ["ref-owasp-llm-top-10-2025", "ref-nvidia-garak"],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

@@ -1,0 +1,32 @@
+{
+  "id": "obj-rag-poisoning-resilience",
+  "name": "RAG Poisoning Resilience",
+  "description": "Assess whether retrieved or embedded content can distort answers, override instructions, or create source-trust confusion.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["rag", "poisoning", "retrieval"],
+  "user_intent_patterns": [
+    "test RAG poisoning",
+    "evaluate retrieval attack resilience",
+    "check whether poisoned documents affect answers"
+  ],
+  "security_problem": "Untrusted or compromised retrieval content may influence responses, citations, tool decisions, or policy adherence.",
+  "planning_questions": [
+    "Which retrieval sources and trust levels are in scope?",
+    "Can the harness capture retrieved chunks, citations, and ranking signals?",
+    "Should the plan evaluate answer correctness, instruction following, or disclosure risk?"
+  ],
+  "recommended_attack_families": ["af-retrieval-attacks", "af-indirect-prompt-injection", "af-context-manipulation"],
+  "recommended_evaluation_rules": ["eval-policy-bypass", "eval-sensitive-information-leakage"],
+  "owasp_mappings": [
+    "owasp-llm04-2025-data-and-model-poisoning",
+    "owasp-llm08-2025-vector-and-embedding-weaknesses",
+    "owasp-llm01-2025-prompt-injection"
+  ],
+  "mitre_mappings": ["atlas-aml-t0051-001-llm-prompt-injection-indirect"],
+  "recommended_mitigations": ["mit-prompt-isolation", "mit-input-sanitization", "mit-output-filtering"],
+  "related_objectives": ["obj-indirect-prompt-injection-resilience", "obj-sensitive-information-disclosure-resilience"],
+  "references": ["ref-indirect-prompt-injection-paper", "ref-agentdojo"],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

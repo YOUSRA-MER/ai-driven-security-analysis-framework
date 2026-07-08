@@ -1,0 +1,17 @@
+{
+  "id": "ref-indirect-prompt-injection-paper",
+  "name": "Not What You've Signed Up For",
+  "description": "Academic paper describing indirect prompt injection risks in LLM-integrated applications.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["indirect_prompt_injection", "academic_paper", "llm_applications"],
+  "source_type": "paper",
+  "authors": ["Kai Greshake", "Sahar Abdelnabi", "Shailesh Mishra", "Christoph Endres", "Thorsten Holz"],
+  "published_at": "2023",
+  "url": "https://arxiv.org/abs/2302.12173",
+  "citation": "Greshake et al., Not What You've Signed Up For: Compromising Real-World LLM-Integrated Applications with Indirect Prompt Injection, 2023.",
+  "relevance": "Foundational source for external-content, retrieval, and tool-output injection planning.",
+  "references": [],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

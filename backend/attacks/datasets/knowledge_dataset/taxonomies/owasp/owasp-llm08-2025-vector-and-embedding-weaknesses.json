@@ -1,0 +1,20 @@
+{
+  "id": "owasp-llm08-2025-vector-and-embedding-weaknesses",
+  "name": "OWASP LLM08 Vector and Embedding Weaknesses",
+  "description": "OWASP category for security weaknesses in embedding, vector search, retrieval, and semantic similarity pipelines.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["owasp", "llm08", "retrieval"],
+  "owasp_version": "2025",
+  "category_id": "LLM08",
+  "category_name": "Vector and Embedding Weaknesses",
+  "planning_relevance": "Use when planning retrieval attack, RAG poisoning, context stuffing, source confusion, or embedding trust-boundary evaluations.",
+  "related_entities": [
+    "obj-rag-poisoning-resilience",
+    "af-retrieval-attacks",
+    "af-context-manipulation"
+  ],
+  "references": ["ref-owasp-llm-top-10-2025"],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

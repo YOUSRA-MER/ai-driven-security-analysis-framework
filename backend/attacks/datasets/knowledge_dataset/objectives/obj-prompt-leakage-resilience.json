@@ -1,0 +1,28 @@
+{
+  "id": "obj-prompt-leakage-resilience",
+  "name": "Prompt Leakage Resilience",
+  "description": "Assess whether hidden prompts, developer instructions, chain configuration, or internal policy details are exposed.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["prompt_leakage", "system_prompt", "configuration"],
+  "user_intent_patterns": [
+    "test prompt leakage",
+    "check hidden instruction disclosure",
+    "evaluate whether internal prompts are exposed"
+  ],
+  "security_problem": "Protected prompt content or internal configuration may be disclosed through diagnostic, audit, roleplay, or multi-turn framing.",
+  "planning_questions": [
+    "What prompt or configuration content is protected?",
+    "Is a high-level policy explanation acceptable while exact internal text is not?",
+    "Which evidence fields distinguish disclosure from generic explanation?"
+  ],
+  "recommended_attack_families": ["af-prompt-leakage", "af-context-manipulation"],
+  "recommended_evaluation_rules": ["eval-system-prompt-disclosure", "eval-sensitive-information-leakage"],
+  "owasp_mappings": ["owasp-llm02-2025-sensitive-information-disclosure", "owasp-llm07-2025-system-prompt-leakage"],
+  "mitre_mappings": ["atlas-aml-t0051-prompt-injection"],
+  "recommended_mitigations": ["mit-prompt-isolation", "mit-output-filtering"],
+  "related_objectives": ["obj-system-prompt-disclosure-resilience", "obj-sensitive-information-disclosure-resilience"],
+  "references": ["ref-owasp-llm-top-10-2025", "ref-nvidia-garak"],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

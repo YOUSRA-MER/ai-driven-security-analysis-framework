@@ -1,0 +1,17 @@
+{
+  "id": "ref-mitre-atlas",
+  "name": "MITRE ATLAS",
+  "description": "MITRE Adversarial Threat Landscape for Artificial-Intelligence Systems knowledge base.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["mitre_atlas", "adversarial_ml", "taxonomy"],
+  "source_type": "standard",
+  "authors": ["MITRE"],
+  "published_at": "2026",
+  "url": "https://atlas.mitre.org/",
+  "citation": "MITRE ATLAS, Adversarial Threat Landscape for Artificial-Intelligence Systems.",
+  "relevance": "Provides adversarial AI technique identifiers for mapping LLM security objectives and findings.",
+  "references": [],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

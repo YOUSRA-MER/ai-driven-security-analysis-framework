@@ -1,0 +1,28 @@
+{
+  "id": "style-single-turn-probe",
+  "name": "Single-Turn Probe",
+  "description": "A stateless one-message evaluation style for baseline behavior and simple instruction-boundary checks.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["single_turn", "baseline", "stateless"],
+  "turn_pattern": "single_turn",
+  "state_requirements": [],
+  "turn_limits": {
+    "min": 1,
+    "max": 1,
+    "preferred": 1
+  },
+  "recommended_for": [
+    "af-prompt-injection",
+    "af-prompt-leakage",
+    "strat-security-audit-framing"
+  ],
+  "stop_conditions": [
+    "A response is collected and can be scored.",
+    "The target returns an application or transport error.",
+    "The target refuses the test harness request itself."
+  ],
+  "references": ["ref-microsoft-pyrit", "ref-nvidia-garak"],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

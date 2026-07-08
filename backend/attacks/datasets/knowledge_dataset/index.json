@@ -1,0 +1,26 @@
+{
+  "dataset_id": "knowledge_dataset",
+  "name": "LLM Security Planning Knowledge Dataset",
+  "version": "1.0.0",
+  "schema_version": "2026-07-08",
+  "purpose": "Normalized reasoning knowledge for AI-driven LLM security planning.",
+  "excludes": [
+    "attack prompts",
+    "jailbreak prompts",
+    "payloads",
+    "concrete attack examples"
+  ],
+  "entity_directories": {
+    "objectives": "Security goals and planning intents.",
+    "attack_families": "Technique families selected during planning.",
+    "strategies": "Abstract execution approaches for authorized testing.",
+    "prompt_mutations": "Safe mutation concepts used by prompt mutation engines.",
+    "conversation_styles": "Interaction patterns such as single-turn or multi-turn.",
+    "model_profiles": "Model and deployment traits relevant to risk planning.",
+    "evaluation_rules": "Reusable response assessment rules.",
+    "mitigations": "Controls and recommendations linked to risks.",
+    "taxonomies/owasp": "OWASP LLM Top 10 mappings.",
+    "taxonomies/mitre": "MITRE ATLAS mappings.",
+    "references": "Research, standards, and source metadata."
+  }
+}

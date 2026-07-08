@@ -1,0 +1,17 @@
+{
+  "id": "ref-anthropic-responsible-scaling-policy",
+  "name": "Anthropic Responsible Scaling Policy",
+  "description": "Anthropic policy framework for evaluating frontier model risks and safety controls as capabilities increase.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["anthropic", "ai_safety", "frontier_risk"],
+  "source_type": "documentation",
+  "authors": ["Anthropic"],
+  "published_at": "2023",
+  "url": "https://www.anthropic.com/responsible-scaling-policy",
+  "citation": "Anthropic Responsible Scaling Policy.",
+  "relevance": "Supports model-profile reasoning about capability-sensitive risk, evaluations, and deployment controls.",
+  "references": [],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

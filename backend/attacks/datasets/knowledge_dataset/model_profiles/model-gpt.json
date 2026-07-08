@@ -1,0 +1,31 @@
+{
+  "id": "model-gpt",
+  "name": "GPT Model Family",
+  "description": "Planning profile for GPT-style chat and assistant models deployed through application-controlled prompts, tools, or retrieval.",
+  "version": "1.0.0",
+  "status": "active",
+  "tags": ["gpt", "chat", "provider_model"],
+  "profile_type": "provider",
+  "capabilities": ["chat_completion", "instruction_following", "tool_use", "structured_output"],
+  "context_window_class": "large",
+  "tool_access": "unknown",
+  "risk_sensitivities": [
+    {
+      "entity_id": "af-prompt-injection",
+      "sensitivity": "medium",
+      "rationale": "Prompt injection risk depends heavily on application prompt assembly and untrusted content handling."
+    },
+    {
+      "entity_id": "af-tool-abuse",
+      "sensitivity": "high",
+      "rationale": "Tool-integrated deployments require explicit permission, approval, and argument validation controls."
+    }
+  ],
+  "evaluation_notes": [
+    "Score the deployed application boundary, not only the base model.",
+    "Capture tool, retrieval, and policy metadata when available."
+  ],
+  "references": ["ref-openai-preparedness-framework", "ref-nist-ai-rmf-1-0"],
+  "created_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

@@ -17,6 +17,7 @@ from backend.attacks.prompt_injection import PromptInjectionAttack
 from backend.attacks.prompt_leakage import PromptLeakageAttack
 from backend.attacks.rag_poisoning import RagPoisoningAttack
 from backend.attacks.roleplay import RoleplayAttack
+from backend.attacks.tool_abuse import ToolAbuseAttack
 from backend.targets.ollama import OllamaTarget
 from backend.targets.rest_api import RestApiTarget
 
@@ -32,6 +33,7 @@ ATTACKS = {
     "multilingual": MultilingualAttack,
     "context_overflow": ContextOverflowAttack,
     "data_exfiltration": DataExfiltrationAttack,
+    "tool_abuse": ToolAbuseAttack,
     "data_leakage": DataLeakageAttack,
 }
 

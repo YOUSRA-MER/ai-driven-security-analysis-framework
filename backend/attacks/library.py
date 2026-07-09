@@ -10,7 +10,7 @@ from typing import Any, Iterable
 from backend.models.attack import AttackPrompt, AttackRequest, AttackStrategy
 
 
-DATASET_DIR = Path(__file__).with_name("datasets")
+DATASET_DIR = Path(__file__).with_name("datasets") / "Attack_dataset"
 
 
 class DatasetAttackStrategy(AttackStrategy):

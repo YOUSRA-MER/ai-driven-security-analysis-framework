@@ -1,0 +1,479 @@
+[
+  {
+    "id": "src-context-overflow-anthropic-many-shot-jailbreaking-research",
+    "module": "context_overflow",
+    "source_name": "Anthropic - Many-shot Jailbreaking research",
+    "type": "paper",
+    "url": "https://www.anthropic.com/research/many-shot-jailbreaking",
+    "access_note": "Official Anthropic research page; methodology, not a static prompt dataset",
+    "license": ""
+  },
+  {
+    "id": "src-context-overflow-cognitive-overload-attack",
+    "module": "context_overflow",
+    "source_name": "Cognitive Overload Attack",
+    "type": "paper",
+    "url": "https://arxiv.org/abs/2410.11272",
+    "access_note": "Paper describing long-context prompt injection method",
+    "license": ""
+  },
+  {
+    "id": "src-context-overflow-many-turn-jailbreaking",
+    "module": "context_overflow",
+    "source_name": "Many-Turn Jailbreaking",
+    "type": "paper",
+    "url": "https://arxiv.org/abs/2508.06755",
+    "access_note": "Paper, extends many-shot to multi-turn",
+    "license": ""
+  },
+  {
+    "id": "src-context-overflow-many-shot-jailbreaking-neurips-2024-paper",
+    "module": "context_overflow",
+    "source_name": "Many-shot Jailbreaking (NeurIPS 2024 paper)",
+    "type": "paper",
+    "url": "https://proceedings.neurips.cc/paper_files/paper/2024/file/ea456e232efb72d261715e33ce25f208-Paper-Conference.pdf",
+    "access_note": "Official paper PDF",
+    "license": ""
+  },
+  {
+    "id": "src-context-overflow-what-really-matters-in-many-shot-attacks",
+    "module": "context_overflow",
+    "source_name": "What Really Matters in Many-Shot Attacks?",
+    "type": "paper",
+    "url": "https://arxiv.org/abs/2505.19773",
+    "access_note": "Empirical study up to 128K tokens",
+    "license": ""
+  },
+  {
+    "id": "src-data-exfiltration-agentdojo-exfiltration-style-attacker-goals",
+    "module": "data_exfiltration",
+    "source_name": "AgentDojo (exfiltration-style attacker goals)",
+    "type": "benchmark",
+    "url": "https://github.com/ethz-spylab/agentdojo",
+    "access_note": "GitHub-hosted, cloneable",
+    "license": "MIT"
+  },
+  {
+    "id": "src-data-exfiltration-injecagent-data-stealing-test-cases",
+    "module": "data_exfiltration",
+    "source_name": "InjecAgent (data-stealing test cases)",
+    "type": "benchmark+dataset",
+    "url": "https://github.com/uiuc-kang-lab/InjecAgent",
+    "access_note": "INCLUDED IN THIS FILE (sheet: Real_Prompts_Data) - 120 real data-exfiltration cases",
+    "license": "MIT (check repo)"
+  },
+  {
+    "id": "src-data-exfiltration-mitre-atlas-aml-t0086-aml-t0024",
+    "module": "data_exfiltration",
+    "source_name": "MITRE ATLAS AML.T0086 / AML.T0024",
+    "type": "framework",
+    "url": "https://atlas.mitre.org/",
+    "access_note": "Official MITRE technique catalog entries (not a dataset, a taxonomy)",
+    "license": "MITRE terms"
+  },
+  {
+    "id": "src-data-exfiltration-pii-compass",
+    "module": "data_exfiltration",
+    "source_name": "PII-Compass",
+    "type": "paper",
+    "url": "https://arxiv.org/abs/2407.02943",
+    "access_note": "True-prefix PII reconstruction attack methodology",
+    "license": ""
+  },
+  {
+    "id": "src-data-exfiltration-pii-scope",
+    "module": "data_exfiltration",
+    "source_name": "PII-Scope",
+    "type": "paper+benchmark",
+    "url": "https://arxiv.org/abs/2410.06704",
+    "access_note": "Benchmark for PII extraction; check for code/data release",
+    "license": ""
+  },
+  {
+    "id": "src-encoding-jbshield-evaluates-base64-encoding-jailbreaks",
+    "module": "encoding",
+    "source_name": "JBShield (evaluates Base64/encoding jailbreaks)",
+    "type": "paper+code",
+    "url": "https://arxiv.org/abs/2502.07557",
+    "access_note": "Check paper for code repo link",
+    "license": ""
+  },
+  {
+    "id": "src-encoding-mlcommons-ailuminate-jailbreak-benchmark-v0-5",
+    "module": "encoding",
+    "source_name": "MLCommons AILuminate Jailbreak Benchmark v0.5",
+    "type": "benchmark",
+    "url": "https://mlcommons.org/wp-content/uploads/2025/12/MLCommons-Security-Jailbreak-0.5.1.pdf",
+    "access_note": "Official MLCommons PDF spec; check mlcommons.org for downloadable data",
+    "license": "MLCommons terms"
+  },
+  {
+    "id": "src-encoding-structuralsleight",
+    "module": "encoding",
+    "source_name": "StructuralSleight",
+    "type": "paper",
+    "url": "https://arxiv.org/abs/2406.08754",
+    "access_note": "Paper only",
+    "license": ""
+  },
+  {
+    "id": "src-encoding-teleai-safety-framework",
+    "module": "encoding",
+    "source_name": "TeleAI-Safety framework",
+    "type": "code+dataset",
+    "url": "https://arxiv.org/abs/2512.05485",
+    "access_note": "Framework paper; 342-sample dataset described, check for GitHub release",
+    "license": ""
+  },
+  {
+    "id": "src-encoding-h4rm3l-composable-jailbreak-language",
+    "module": "encoding",
+    "source_name": "h4rm3l (composable jailbreak language)",
+    "type": "code+paper",
+    "url": "https://proceedings.iclr.cc/paper_files/paper/2025/file/904aac1c930c196f1c71533d4d9dc31a-Paper-Conference.pdf",
+    "access_note": "Check for GitHub code release linked in paper",
+    "license": ""
+  },
+  {
+    "id": "src-indirect-prompt-inje-adaptive-attacks-break-ipi-defenses",
+    "module": "indirect_prompt_injection",
+    "source_name": "Adaptive Attacks Break IPI Defenses",
+    "type": "paper",
+    "url": "https://arxiv.org/abs/2503.00061",
+    "access_note": "Paper, evaluates on InjecAgent+AgentDojo",
+    "license": ""
+  },
+  {
+    "id": "src-indirect-prompt-inje-agentdojo",
+    "module": "indirect_prompt_injection",
+    "source_name": "AgentDojo",
+    "type": "benchmark",
+    "url": "https://github.com/ethz-spylab/agentdojo",
+    "access_note": "GitHub-hosted, cloneable, dynamic environment (not static CSV)",
+    "license": "MIT"
+  },
+  {
+    "id": "src-indirect-prompt-inje-greshake-et-al-foundational-paper",
+    "module": "indirect_prompt_injection",
+    "source_name": "Greshake et al. foundational paper",
+    "type": "paper",
+    "url": "https://arxiv.org/abs/2302.12173",
+    "access_note": "Paper only, no dataset per se",
+    "license": ""
+  },
+  {
+    "id": "src-indirect-prompt-inje-injecagent",
+    "module": "indirect_prompt_injection",
+    "source_name": "InjecAgent",
+    "type": "benchmark+dataset",
+    "url": "https://github.com/uiuc-kang-lab/InjecAgent",
+    "access_note": "INCLUDED IN THIS FILE (sheet: Real_Prompts_Data) - 240 real test cases (direct harm + data stealing)",
+    "license": "MIT (check repo)"
+  },
+  {
+    "id": "src-indirect-prompt-inje-taxonomy-of-agent-safety-benchmarks-survey",
+    "module": "indirect_prompt_injection",
+    "source_name": "Taxonomy of Agent Safety Benchmarks (survey)",
+    "type": "survey",
+    "url": "https://arxiv.org/abs/2605.16282",
+    "access_note": "Survey paper, references many benchmarks",
+    "license": ""
+  },
+  {
+    "id": "src-jailbreak-advbench-harmful-behaviors-csv",
+    "module": "jailbreak",
+    "source_name": "AdvBench (harmful_behaviors.csv)",
+    "type": "dataset",
+    "url": "https://github.com/llm-attacks/llm-attacks",
+    "access_note": "INCLUDED IN THIS FILE (sheet: Real_Prompts_Data) - 521 harmful behavior goals",
+    "license": "MIT"
+  },
+  {
+    "id": "src-jailbreak-harmbench",
+    "module": "jailbreak",
+    "source_name": "HarmBench",
+    "type": "benchmark",
+    "url": "https://github.com/centerforaisafety/HarmBench",
+    "access_note": "GitHub-hosted, cloneable",
+    "license": "MIT"
+  },
+  {
+    "id": "src-jailbreak-jailbreakv-28k",
+    "module": "jailbreak",
+    "source_name": "JailBreakV-28K",
+    "type": "dataset",
+    "url": "https://arxiv.org/abs/2404.03027",
+    "access_note": "Dataset released via project page/HF; paper accessible via arXiv",
+    "license": "Check paper for license"
+  },
+  {
+    "id": "src-jailbreak-jailbreakbench-jbb-behaviors",
+    "module": "jailbreak",
+    "source_name": "JailbreakBench / JBB-Behaviors",
+    "type": "benchmark+dataset",
+    "url": "https://github.com/JailbreakBench/jailbreakbench",
+    "access_note": "GitHub-hosted code; JBB-Behaviors dataset itself is on HuggingFace (blocked here)",
+    "license": "MIT + dataset DOI 10.57967/hf/2540"
+  },
+  {
+    "id": "src-jailbreak-verazuo-jailbreak-llms-do-anything-now",
+    "module": "jailbreak",
+    "source_name": "verazuo/jailbreak_llms (Do Anything Now)",
+    "type": "dataset",
+    "url": "https://github.com/verazuo/jailbreak_llms",
+    "access_note": "INCLUDED IN THIS FILE (sheet: Real_Prompts_Data) - filtered sample of 150 real jailbreak prompts w/ platform+community labels",
+    "license": "CC BY-NC-SA (research use - check LICENSE)"
+  },
+  {
+    "id": "src-multilingual-csrt-code-switching-red-teaming-dataset",
+    "module": "multilingual",
+    "source_name": "CSRT (Code-Switching Red-Teaming dataset)",
+    "type": "dataset",
+    "url": "https://arxiv.org/abs/2406.15481",
+    "access_note": "Check paper for dataset release",
+    "license": ""
+  },
+  {
+    "id": "src-multilingual-low-resource-languages-jailbreak-gpt-4-yong-et-al",
+    "module": "multilingual",
+    "source_name": "Low-resource languages jailbreak GPT-4 (Yong et al.)",
+    "type": "paper",
+    "url": "https://arxiv.org/abs/2310.02446",
+    "access_note": "Paper, methodology for translation attacks",
+    "license": ""
+  },
+  {
+    "id": "src-multilingual-multijail-deng-et-al",
+    "module": "multilingual",
+    "source_name": "MultiJail (Deng et al.)",
+    "type": "dataset",
+    "url": "https://arxiv.org/abs/2310.06474",
+    "access_note": "3,150 samples in 10 languages; check paper for GitHub/HF release link",
+    "license": ""
+  },
+  {
+    "id": "src-multilingual-multilingual-prompt-injections-dataset",
+    "module": "multilingual",
+    "source_name": "Multilingual Prompt Injections dataset",
+    "type": "dataset",
+    "url": "https://huggingface.co/datasets/yanismiraoui/prompt_injections",
+    "access_note": "Requires huggingface.co access - download locally",
+    "license": "Check HF card"
+  },
+  {
+    "id": "src-prompt-injection-meta-cyberseceval2-3-prompt-injection-suite",
+    "module": "prompt_injection",
+    "source_name": "Meta CyberSecEval2/3 - Prompt Injection suite",
+    "type": "benchmark",
+    "url": "https://github.com/meta-llama/PurpleLlama/tree/main/CybersecurityBenchmarks",
+    "access_note": "GitHub-hosted, cloneable",
+    "license": "MIT"
+  },
+  {
+    "id": "src-prompt-injection-open-prompt-injection-toolkit-attacks-defenses",
+    "module": "prompt_injection",
+    "source_name": "Open-Prompt-Injection (toolkit+attacks/defenses)",
+    "type": "code+benchmark",
+    "url": "https://github.com/liu00222/Open-Prompt-Injection",
+    "access_note": "Clone via GitHub; includes attack/defense implementations",
+    "license": "MIT/BSD (check repo)"
+  },
+  {
+    "id": "src-prompt-injection-awesome-prompt-injection-curated-list",
+    "module": "prompt_injection",
+    "source_name": "awesome-prompt-injection (curated list)",
+    "type": "list/links",
+    "url": "https://github.com/Joe-B-Security/awesome-prompt-injection",
+    "access_note": "GitHub-hosted",
+    "license": ""
+  },
+  {
+    "id": "src-prompt-injection-deepset-prompt-injections",
+    "module": "prompt_injection",
+    "source_name": "deepset/prompt-injections",
+    "type": "dataset",
+    "url": "https://huggingface.co/datasets/deepset/prompt-injections",
+    "access_note": "Requires huggingface.co access (blocked in this sandbox) - download via `datasets` library locally",
+    "license": "Apache 2.0"
+  },
+  {
+    "id": "src-prompt-injection-facebook-cyberseceval3-visual-prompt-injection",
+    "module": "prompt_injection",
+    "source_name": "facebook/cyberseceval3-visual-prompt-injection",
+    "type": "dataset",
+    "url": "https://huggingface.co/datasets/facebook/cyberseceval3-visual-prompt-injection",
+    "access_note": "Requires huggingface.co access - download locally",
+    "license": "CC (check repo)"
+  },
+  {
+    "id": "src-prompt-leakage-leakagent",
+    "module": "prompt_leakage",
+    "source_name": "LeakAgent",
+    "type": "paper+code",
+    "url": "https://arxiv.org/abs/2412.05734",
+    "access_note": "RL red-teaming agent, code likely on GitHub - verify via paper links",
+    "license": "Check repo"
+  },
+  {
+    "id": "src-prompt-leakage-leakbench",
+    "module": "prompt_leakage",
+    "source_name": "LeakBench",
+    "type": "benchmark",
+    "url": "https://arxiv.org/abs/2606.18673",
+    "access_note": "Recent paper (2026), check for code release",
+    "license": "Check paper"
+  },
+  {
+    "id": "src-prompt-leakage-pleak",
+    "module": "prompt_leakage",
+    "source_name": "PLeak",
+    "type": "paper+code",
+    "url": "https://arxiv.org/abs/2405.06823",
+    "access_note": "Code linked from paper page",
+    "license": "Check repo"
+  },
+  {
+    "id": "src-prompt-leakage-prompt-leakage-effect-and-defense-strategies-emnlp-2024",
+    "module": "prompt_leakage",
+    "source_name": "Prompt Leakage Effect and Defense Strategies (EMNLP 2024)",
+    "type": "paper",
+    "url": "https://arxiv.org/abs/2404.16251",
+    "access_note": "Paper + methodology, no single public CSV",
+    "license": ""
+  },
+  {
+    "id": "src-prompt-leakage-system-prompt-leakage-dataset-355k-rows",
+    "module": "prompt_leakage",
+    "source_name": "System Prompt Leakage Dataset (~355k rows)",
+    "type": "dataset",
+    "url": "https://huggingface.co/datasets/gabrielchua/system-prompt-leakage",
+    "access_note": "Requires huggingface.co access - download locally",
+    "license": "Check HF card"
+  },
+  {
+    "id": "src-rag-poisoning-awesome-rag-attacks-framework",
+    "module": "rag_poisoning",
+    "source_name": "Awesome-Rag-Attacks (framework)",
+    "type": "code",
+    "url": "https://github.com/jawadhussein462/Awesome-Rag-Attacks",
+    "access_note": "GitHub-hosted, implements PoisonedRAG/CorruptRAG",
+    "license": "Check repo"
+  },
+  {
+    "id": "src-rag-poisoning-awesome-trustworthy-rag-curated-list",
+    "module": "rag_poisoning",
+    "source_name": "Awesome-Trustworthy-RAG (curated list)",
+    "type": "list/links",
+    "url": "https://github.com/Arstanley/Awesome-Trustworthy-RAG",
+    "access_note": "GitHub-hosted",
+    "license": ""
+  },
+  {
+    "id": "src-rag-poisoning-benchmarking-poisoning-attacks-against-rag",
+    "module": "rag_poisoning",
+    "source_name": "Benchmarking Poisoning Attacks against RAG",
+    "type": "paper+benchmark",
+    "url": "https://arxiv.org/abs/2505.18543",
+    "access_note": "Paper; check for code/data release links in paper",
+    "license": ""
+  },
+  {
+    "id": "src-rag-poisoning-poisonedrag",
+    "module": "rag_poisoning",
+    "source_name": "PoisonedRAG",
+    "type": "code+benchmark",
+    "url": "https://github.com/sleeepeer/PoisonedRAG",
+    "access_note": "GitHub-hosted, cloneable, uses BEIR benchmark data",
+    "license": "Check repo"
+  },
+  {
+    "id": "src-rag-poisoning-uncovering-competing-poisoning-attacks-in-rag",
+    "module": "rag_poisoning",
+    "source_name": "Uncovering Competing Poisoning Attacks in RAG",
+    "type": "paper",
+    "url": "https://arxiv.org/abs/2505.12574",
+    "access_note": "Paper, uses NQ/MS MARCO subsets",
+    "license": ""
+  },
+  {
+    "id": "src-roleplay-do-anything-now-paper-shen-et-al",
+    "module": "roleplay",
+    "source_name": "\"Do Anything Now\" paper (Shen et al.)",
+    "type": "paper",
+    "url": "https://arxiv.org/abs/2308.03825",
+    "access_note": "Source paper for verazuo/jailbreak_llms dataset",
+    "license": ""
+  },
+  {
+    "id": "src-roleplay-jailbreakhunter",
+    "module": "roleplay",
+    "source_name": "JailbreakHunter",
+    "type": "paper+tool",
+    "url": "https://arxiv.org/abs/2407.03045",
+    "access_note": "Visual analytics tool for discovering roleplay jailbreaks",
+    "license": ""
+  },
+  {
+    "id": "src-roleplay-rolebreak-rolebreakeval",
+    "module": "roleplay",
+    "source_name": "RoleBreak / RoleBreakEval",
+    "type": "paper+dataset",
+    "url": "https://arxiv.org/abs/2409.16727",
+    "access_note": "Check paper for dataset release link",
+    "license": ""
+  },
+  {
+    "id": "src-roleplay-verazuo-jailbreak-llms-dan-persona-subset",
+    "module": "roleplay",
+    "source_name": "verazuo/jailbreak_llms (DAN/persona subset)",
+    "type": "dataset",
+    "url": "https://github.com/verazuo/jailbreak_llms",
+    "access_note": "Same source as jailbreak sheet - roleplay/persona prompts are a subset within it",
+    "license": "CC BY-NC-SA (check LICENSE)"
+  },
+  {
+    "id": "src-tool-abuse-agentdojo",
+    "module": "tool_abuse",
+    "source_name": "AgentDojo",
+    "type": "benchmark",
+    "url": "https://github.com/ethz-spylab/agentdojo",
+    "access_note": "GitHub-hosted, dynamic tool-calling environment, cloneable",
+    "license": "MIT"
+  },
+  {
+    "id": "src-tool-abuse-injecagent-all-test-cases",
+    "module": "tool_abuse",
+    "source_name": "InjecAgent (all test cases)",
+    "type": "benchmark+dataset",
+    "url": "https://github.com/uiuc-kang-lab/InjecAgent",
+    "access_note": "INCLUDED IN THIS FILE (sheet: Real_Prompts_Data) - 150 combined direct-harm + data-stealing cases relabeled as tool abuse",
+    "license": "MIT (check repo)"
+  },
+  {
+    "id": "src-tool-abuse-mitre-atlas-aml-t0053",
+    "module": "tool_abuse",
+    "source_name": "MITRE ATLAS AML.T0053",
+    "type": "framework",
+    "url": "https://atlas.mitre.org/",
+    "access_note": "Official technique catalog entry: AI Agent Tool Invocation",
+    "license": "MITRE terms"
+  },
+  {
+    "id": "src-tool-abuse-meta-cyberseceval2-3-code-interpreter-abuse-suite",
+    "module": "tool_abuse",
+    "source_name": "Meta CyberSecEval2/3 - Code Interpreter Abuse suite",
+    "type": "benchmark",
+    "url": "https://github.com/meta-llama/PurpleLlama/tree/main/CybersecurityBenchmarks",
+    "access_note": "GitHub-hosted, cloneable",
+    "license": "MIT"
+  },
+  {
+    "id": "src-tool-abuse-owasp-top-10-for-agentic-applications-dec-2025",
+    "module": "tool_abuse",
+    "source_name": "OWASP Top 10 for Agentic Applications (Dec 2025)",
+    "type": "framework",
+    "url": "https://genai.owasp.org/",
+    "access_note": "Official OWASP GenAI Security Project publication",
+    "license": "OWASP CC BY-SA 4.0"
+  }
+]

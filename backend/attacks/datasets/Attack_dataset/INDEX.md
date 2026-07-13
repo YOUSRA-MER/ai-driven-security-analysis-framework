@@ -3,107 +3,90 @@
 Excel-backed attack prompt dataset converted from `source/AI_Redteam_Sources_and_Prompts_extended.xlsx`.
 The adjacent `knowledge_dataset` was not modified.
 
-Total entries: 1678
-Excel prompt rows read: 2244
-Exact duplicate prompt rows skipped within category: 566
+Total entries: 2244
 Category files: 11
 Source catalog records: 53
 
 ## Per-File Counts
 | File | Entries |
 | --- | --- |
-| prompt_injection.json | 300 |
-| jailbreak.json | 395 |
+| prompt_injection.json | 600 |
+| jailbreak.json | 500 |
 | prompt_leakage.json | 150 |
 | indirect_prompt_injection.json | 240 |
-| rag_poisoning.json | 16 |
-| roleplay.json | 148 |
+| rag_poisoning.json | 24 |
+| roleplay.json | 150 |
 | encoding.json | 5 |
-| multilingual.json | 149 |
+| multilingual.json | 300 |
 | context_overflow.json | 5 |
 | data_exfiltration.json | 120 |
 | tool_abuse.json | 150 |
 
-## Skipped Duplicate Rows
-| Category | Skipped Rows |
-| --- | --- |
-| prompt_injection | 300 |
-| jailbreak | 105 |
-| prompt_leakage | 0 |
-| indirect_prompt_injection | 0 |
-| rag_poisoning | 8 |
-| roleplay | 2 |
-| encoding | 0 |
-| multilingual | 151 |
-| context_overflow | 0 |
-| data_exfiltration | 0 |
-| tool_abuse | 0 |
-
 ## Severity Distribution
 | Severity | Entries |
 | --- | --- |
-| critical | 582 |
-| high | 940 |
+| critical | 632 |
+| high | 1307 |
 | low | 2 |
-| medium | 154 |
+| medium | 303 |
 
 ## Top Tags
 | Tag | Entries |
 | --- | --- |
-| excel-import | 1678 |
-| high | 940 |
-| critical | 582 |
+| excel-import | 2244 |
+| high | 1307 |
+| hf | 750 |
+| critical | 632 |
+| instruction-hierarchy | 600 |
+| prompt-injection | 600 |
 | injecagent | 510 |
-| hf | 449 |
-| jailbreak | 395 |
-| safety-bypass | 395 |
+| jailbreak | 500 |
+| safety-bypass | 500 |
 | data-exfiltration | 317 |
-| instruction-hierarchy | 300 |
-| prompt-injection | 300 |
+| medium | 303 |
+| deepset | 300 |
+| prompt-injection-sample | 300 |
+| prompt-injections | 300 |
+| multilingual | 300 |
+| multilingual-prompt-injection | 300 |
+| translation | 300 |
+| yanismiraoui-prompt-injections | 300 |
+| jayavibhav-prompt-injection-safety | 300 |
+| prompt-injection-safety-labeled | 300 |
 | indirect-prompt-injection | 240 |
 | untrusted-content | 240 |
+| jailbreakbench | 200 |
+| jbb-behaviors | 200 |
+| jbb-harmful-behavior | 200 |
 | direct-harm | 193 |
 | others | 171 |
-| medium | 154 |
+| 0 | 156 |
 | jailbreak-prompt | 150 |
 | advbench | 150 |
 | harmful-behavior-goal | 150 |
 | zou-et-al-2023 | 150 |
 | agentic-risk | 150 |
 | tool-abuse | 150 |
-| deepset | 150 |
-| prompt-injection-sample | 150 |
-| prompt-injections | 150 |
-| jayavibhav-prompt-injection-safety | 150 |
-| prompt-injection-safety-labeled | 150 |
 | gabrielchua-system-prompt-leakage | 150 |
 | prompt-leakage | 150 |
 | system-prompt | 150 |
 | system-prompt-leakage-sample | 150 |
-| multilingual | 149 |
-| multilingual-prompt-injection | 149 |
-| translation | 149 |
-| yanismiraoui-prompt-injections | 149 |
-| persona | 148 |
-| roleplay | 148 |
-| roleplay-persona-jailbreak | 148 |
-| privacy | 128 |
-| discord | 106 |
-| website | 104 |
+| persona | 150 |
+| roleplay | 150 |
 
 ## Top Sources
 | Source | Entries |
 | --- | --- |
 | uiuc-kang-lab/InjecAgent (Zhan et al., ACL 2024) | 510 |
+| deepset/prompt-injections (HF) | 300 |
+| yanismiraoui/prompt_injections (HF) | 300 |
+| jayavibhav/prompt-injection-safety (HF, ~50k train/10k test) | 300 |
+| JailbreakBench/JBB-Behaviors (NeurIPS 2024) | 200 |
 | verazuo/jailbreak_llms (Shen et al., CCS 2024) | 150 |
 | llm-attacks/llm-attacks (AdvBench) | 150 |
-| deepset/prompt-injections (HF) | 150 |
-| jayavibhav/prompt-injection-safety (HF, ~50k train/10k test) | 150 |
 | gabrielchua/system-prompt-leakage (~355k rows, HF) | 150 |
-| yanismiraoui/prompt_injections (HF) | 149 |
-| verazuo/jailbreak_llms - filtered for roleplay/persona pattern | 148 |
-| JailbreakBench/JBB-Behaviors (NeurIPS 2024) | 95 |
-| sleeepeer/PoisonedRAG (USENIX Security 2025) - raw repo artifacts | 16 |
+| verazuo/jailbreak_llms - filtered for roleplay/persona pattern | 150 |
+| sleeepeer/PoisonedRAG (USENIX Security 2025) - raw repo artifacts | 24 |
 | N/A | 2 |
 | Promptfoo ASCII/Base64 encoding examples | 1 |
 | PayloadsAllTheThings Prompt Injection | 1 |

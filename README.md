@@ -2,7 +2,6 @@
 
 This is a new, independent backend project for testing LLM applications against prompt injection, jailbreak, prompt leakage, indirect prompt injection, and data leakage risks.
 
-The project does not copy PHANTOM or Microsoft PyRIT. PHANTOM was used only to identify reusable attack categories and payload styles. PyRIT was used only as architectural inspiration for targets, normalization, scoring, memory, conversation handling, and attack orchestration.
 
 ## Architecture
 

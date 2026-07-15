@@ -11,17 +11,31 @@ from backend.ai.utils.enums import ConfidenceLevel
 
 
 CATEGORY_SIGNALS: dict[str, tuple[str, ...]] = {
-    "prompt_injection": ("prompt injection", "instruction override", "ignore instructions", "system override"),
-    "jailbreak": ("jailbreak", "bypass", "refusal", "safety", "policy bypass"),
-    "prompt_leakage": ("prompt leak", "system prompt", "developer message", "hidden instruction", "prompt disclosure"),
-    "indirect_prompt_injection": ("indirect", "email", "web page", "retrieved content", "tool output", "document"),
-    "rag_poisoning": ("rag", "retrieval", "poison", "poisoning", "citation", "vector"),
+    "prompt_injection": ("prompt injection", "instruction override", "ignore instructions", "ignore previous", "system override", "override"),
+    "jailbreak": ("jailbreak", "bypass safety", "refusal", "policy bypass", "guardrail bypass"),
+    "prompt_leakage": ("prompt leak", "system prompt", "developer message", "hidden instruction", "hidden system", "reveal hidden", "prompt disclosure", "system instructions"),
+    "indirect_prompt_injection": ("indirect", "email", "web page", "retrieved content", "tool output", "document", "retrieved document"),
+    "rag_poisoning": ("rag", "retrieval", "poison", "poisoning", "citation", "vector", "knowledge base"),
     "roleplay": ("roleplay", "persona", "fiction", "character", "dan"),
     "encoding": ("encoding", "base64", "unicode", "obfuscation", "cipher", "encoded"),
     "multilingual": ("multilingual", "translation", "language", "cross-lingual", "low-resource"),
     "context_overflow": ("long context", "many-shot", "overflow", "context window", "multi-turn"),
-    "data_exfiltration": ("exfiltration", "secret", "token", "credential", "pii", "privacy", "data leak"),
-    "tool_abuse": ("tool", "agent", "function", "side effect", "email", "calendar", "browser"),
+    "data_exfiltration": ("exfiltration", "secret", "token", "api key", "credential", "confidential", "pii", "privacy", "data leak", "leak api"),
+    "tool_abuse": ("tool", "tool restriction", "agent", "function", "side effect", "email", "calendar", "browser"),
+}
+
+CATEGORY_MAPPINGS: dict[str, dict[str, tuple[str, ...]]] = {
+    "prompt_injection": {"owasp": ("LLM01",), "mitre": ("AML.T0051",)},
+    "jailbreak": {"owasp": ("LLM01",), "mitre": ("AML.T0054",)},
+    "prompt_leakage": {"owasp": ("LLM07",), "mitre": ("AML.T0029",)},
+    "indirect_prompt_injection": {"owasp": ("LLM01",), "mitre": ("AML.T0051",)},
+    "rag_poisoning": {"owasp": ("LLM08",), "mitre": ("AML.T0051",)},
+    "roleplay": {"owasp": ("LLM01",), "mitre": ("AML.T0054",)},
+    "encoding": {"owasp": ("LLM01",), "mitre": ("AML.T0054",)},
+    "multilingual": {"owasp": ("LLM01",), "mitre": ("AML.T0054",)},
+    "context_overflow": {"owasp": ("LLM01",), "mitre": ("AML.T0054",)},
+    "data_exfiltration": {"owasp": ("LLM02",), "mitre": ("AML.T0029",)},
+    "tool_abuse": {"owasp": ("LLM06",), "mitre": ("AML.T0053",)},
 }
 
 
@@ -53,12 +67,13 @@ class DefaultObjectiveAnalyzer(ObjectiveAnalyzer):
         risk_themes = self._extract_risk_themes(normalized, matched_categories)
         capabilities = self._extract_capabilities(normalized)
         confidence = self._confidence(matched_categories, risk_themes)
+        taxonomy_categories = self._taxonomy_categories(matched_categories, capabilities)
         return ObjectiveAnalysis(
             objective=context.objective,
             normalized_objective=normalized,
             target_capabilities=capabilities,
             risk_themes=risk_themes,
-            recommended_categories=matched_categories,
+            recommended_categories=taxonomy_categories,
             constraints=list(context.constraints),
             confidence=confidence,
             confidence_level=self._confidence_level(confidence),
@@ -70,6 +85,11 @@ class DefaultObjectiveAnalyzer(ObjectiveAnalyzer):
                     for signal in CATEGORY_SIGNALS.get(category, ())
                     if signal in normalized
                 ),
+                "owasp_mappings": sorted({mapping for category in matched_categories for mapping in CATEGORY_MAPPINGS.get(category, {}).get("owasp", ())}),
+                "mitre_mappings": sorted({mapping for category in matched_categories for mapping in CATEGORY_MAPPINGS.get(category, {}).get("mitre", ())}),
+                "protected_assets": self._protected_assets(normalized),
+                "security_goal": self._security_goal(matched_categories),
+                "source_categories": matched_categories,
             },
         )
 
@@ -88,6 +108,50 @@ class DefaultObjectiveAnalyzer(ObjectiveAnalyzer):
         if not matches:
             matches.append("prompt_injection")
         return matches
+
+    def _taxonomy_categories(self, categories: list[str], capabilities: list[str]) -> list[str]:
+        """Map objective categories to Dataset A attack-family categories."""
+
+        mapped: list[str] = []
+        for category in categories:
+            if category == "data_exfiltration":
+                if "tool_use" in capabilities:
+                    mapped.append("tool_abuse")
+                elif "retrieval" in capabilities:
+                    mapped.append("rag_poisoning")
+                mapped.append("prompt_leakage")
+            else:
+                mapped.append(category)
+        return list(dict.fromkeys(mapped))
+
+    def _protected_assets(self, normalized: str) -> list[str]:
+        """Infer protected assets named or implied by the objective."""
+
+        assets = []
+        checks = {
+            "hidden_system_instructions": ("system prompt", "system instruction", "hidden system", "developer message"),
+            "confidential_documents": ("confidential", "rag", "document", "knowledge base"),
+            "api_keys": ("api key", "token", "credential", "secret"),
+            "tool_boundaries": ("tool", "function", "browser", "email", "calendar"),
+            "personal_data": ("pii", "privacy", "personal"),
+        }
+        for asset, signals in checks.items():
+            if any(signal in normalized for signal in signals):
+                assets.append(asset)
+        return assets
+
+    def _security_goal(self, categories: list[str]) -> str:
+        """Return concise security goal for matched categories."""
+
+        if "prompt_leakage" in categories:
+            return "prevent disclosure of hidden instructions or protected prompts"
+        if "data_exfiltration" in categories:
+            return "prevent unauthorized disclosure of sensitive data"
+        if "tool_abuse" in categories:
+            return "preserve tool permission and side-effect boundaries"
+        if "indirect_prompt_injection" in categories:
+            return "resist untrusted retrieved or tool-supplied instructions"
+        return "preserve instruction hierarchy and safety policy adherence"
 
     def _extract_risk_themes(self, normalized: str, categories: list[str]) -> list[str]:
         """Extract high-level risk themes from objective text."""

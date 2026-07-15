@@ -35,3 +35,23 @@ class PlannerResult(BaseModel):
     errors: list[str] = Field(default_factory=list)
     metadata: dict[str, Any] = Field(default_factory=dict)
 
+
+class PlannerError(BaseModel):
+    """Non-fatal provider error scoped to one planner step.
+
+    Attributes:
+        step: Planner/provider step that failed.
+        message: Human-readable error summary.
+        raw_response: Raw model response when available. This must never include
+            credentials or provider secrets.
+        retryable: Whether the caller may retry the same step.
+        metadata: Additional safe diagnostic details.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    step: str
+    message: str
+    raw_response: str | None = None
+    retryable: bool = False
+    metadata: dict[str, Any] = Field(default_factory=dict)

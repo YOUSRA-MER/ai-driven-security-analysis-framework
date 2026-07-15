@@ -75,6 +75,16 @@ class DefaultAttackPlanner(AttackPlanner):
                 "knowledge_entry_count": len(context.knowledge_entries),
                 "retrieved_asset_count": len(context.attack_assets),
                 "selected_asset_count": len(assets),
+                "selected_attack_family_reason": self._family_reason(context, selected_family),
+                "selected_strategy_reason": selected_strategy.rationale if selected_strategy else "",
+                "selected_prompt_assets": [
+                    {
+                        "asset_id": asset.id,
+                        "reason": asset.metadata.get("selection_reason", "selected by Dataset B ranking"),
+                        "score": asset.metadata.get("selection_score"),
+                    }
+                    for asset in assets
+                ],
             },
         )
 
@@ -171,11 +181,24 @@ class DefaultAttackPlanner(AttackPlanner):
         strategy_ids = ", ".join(strategy.id for strategy in strategies) or "none"
         return (
             f"The normalized objective matched categories [{categories}]. "
-            f"Dataset A retrieval supplied {len(context.knowledge_entries)} knowledge records, "
-            f"and Dataset B retrieval supplied {len(context.attack_assets)} candidate assets. "
-            f"The planner selected family '{selected_family}', strategies [{strategy_ids}], "
-            f"and {len(assets)} assets without generating prompts or executing attacks."
+            f"The top-ranked Dataset A records agree with family '{selected_family}', "
+            f"and Dataset B ranking selected {len(assets)} prompt assets. "
+            f"Strategy comparison selected [{strategy_ids}] based on objective fit, effectiveness, reliability, "
+            f"conversation requirements, and complexity. No attacks were executed."
         )
+
+    def _family_reason(self, context: PlannerContext, selected_family: str) -> str:
+        """Return concise family-selection explanation."""
+
+        analysis = context.objective_analysis
+        if not analysis:
+            return "Selected from highest-ranked strategy and asset alignment."
+        normalized_family = selected_family.replace("af-", "").replace("-", "_")
+        if normalized_family in {category.replace("-", "_") for category in analysis.recommended_categories}:
+            return (
+                f"Objective explicitly aligns with {normalized_family}; Dataset A and selected assets support this family."
+            )
+        return "Selected from strongest strategy and Dataset B asset agreement."
 
     def _execution_recommendations(
         self,

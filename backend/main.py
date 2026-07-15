@@ -4,8 +4,12 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import logging
+
+from fastapi import FastAPI
 
 from backend.ai.orchestrator import AIOrchestrator
+from backend.api.planner import router as planner_router
 from backend.attacks.context_overflow import ContextOverflowAttack
 from backend.attacks.data_leakage import DataLeakageAttack
 from backend.attacks.data_exfiltration import DataExfiltrationAttack
@@ -20,6 +24,12 @@ from backend.attacks.roleplay import RoleplayAttack
 from backend.attacks.tool_abuse import ToolAbuseAttack
 from backend.targets.ollama import OllamaTarget
 from backend.targets.rest_api import RestApiTarget
+
+
+logging.basicConfig(level=logging.INFO)
+
+app = FastAPI(title="AI-Driven Security Analysis Platform")
+app.include_router(planner_router)
 
 
 ATTACKS = {

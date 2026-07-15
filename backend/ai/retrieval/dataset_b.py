@@ -56,6 +56,10 @@ class DatasetBRepository(ABC):
 class FileDatasetBRepository(DatasetBRepository):
     """Filesystem-backed Dataset B repository placeholder."""
 
+    _cache: dict[str, list[AttackAsset]] = {}
+    _cache_hits: int = 0
+    _cache_misses: int = 0
+
     def load_assets(self) -> list[AttackAsset]:
         """Load all normalized attack assets from disk.
 
@@ -67,6 +71,12 @@ class FileDatasetBRepository(DatasetBRepository):
                 file cannot be parsed.
         """
 
+        cache_key = str(self.dataset_dir.resolve())
+        if cache_key in self._cache:
+            type(self)._cache_hits += 1
+            return [asset.model_copy(deep=True) for asset in self._cache[cache_key]]
+
+        type(self)._cache_misses += 1
         if not self.dataset_dir.exists():
             raise RetrievalError(f"Dataset B directory does not exist: {self.dataset_dir}")
 
@@ -81,12 +91,18 @@ class FileDatasetBRepository(DatasetBRepository):
             if not isinstance(raw, list):
                 continue
             assets.extend(self._normalize(item, path) for item in raw if isinstance(item, dict))
-        return assets
+        self._cache[cache_key] = assets
+        return [asset.model_copy(deep=True) for asset in assets]
 
     def get_asset(self, asset_id: str) -> AttackAsset | None:
         """Return one attack asset by ID."""
 
         return next((asset for asset in self.load_assets() if asset.id == asset_id), None)
+
+    def cache_stats(self) -> dict[str, int]:
+        """Return Dataset B cache hit/miss counters."""
+
+        return {"cache_hits": self._cache_hits, "cache_misses": self._cache_misses}
 
     def _normalize(self, raw: dict[str, Any], path: Path) -> AttackAsset:
         """Normalize one raw Dataset B object."""

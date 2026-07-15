@@ -9,7 +9,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from backend.ai.utils.enums import ProviderRole
 from backend.ai.models.objective_analysis import ObjectiveAnalysis
-from backend.ai.models.prompt_generation import Prompt
+from backend.ai.models.planner_result import PlannerError
+from backend.ai.models.prompt_generation import Prompt, PromptGenerationResult
 from backend.ai.models.reasoning_session import AttackFamilyAssessment, AttackHypothesis, ConfidenceAssessment, PlanDirective, PlanValidation, ReasoningSession, StrategyEvaluation
 
 
@@ -91,7 +92,27 @@ class AIProvider(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def analyze_objective(self, objective: str) -> ObjectiveAnalysis:
+    async def analyze_objective(self, objective: str) -> ObjectiveAnalysis | PlannerError:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def reason_about_attack(self, session: ReasoningSession) -> ReasoningResult:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def select_attack_family(self, session: ReasoningSession) -> AttackFamilyAssessment | PlannerError:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def select_strategy(self, session: ReasoningSession) -> StrategyEvaluation | PlannerError:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def build_attack_plan(self, session: ReasoningSession) -> PlanDirective | PlannerError:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def generate_prompts(self, session: ReasoningSession) -> PromptGenerationResult | PlannerError:
         raise NotImplementedError
 
     @abstractmethod

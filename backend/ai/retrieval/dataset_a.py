@@ -59,6 +59,10 @@ class DatasetARepository(ABC):
 class FileDatasetARepository(DatasetARepository):
     """Filesystem-backed Dataset A repository placeholder."""
 
+    _cache: dict[str, list[KnowledgeEntry]] = {}
+    _cache_hits: int = 0
+    _cache_misses: int = 0
+
     def load_entries(self) -> list[KnowledgeEntry]:
         """Load all normalized knowledge entries from disk.
 
@@ -70,6 +74,12 @@ class FileDatasetARepository(DatasetARepository):
                 file cannot be parsed.
         """
 
+        cache_key = str(self.dataset_dir.resolve())
+        if cache_key in self._cache:
+            type(self)._cache_hits += 1
+            return [entry.model_copy(deep=True) for entry in self._cache[cache_key]]
+
+        type(self)._cache_misses += 1
         if not self.dataset_dir.exists():
             raise RetrievalError(f"Dataset A directory does not exist: {self.dataset_dir}")
 
@@ -85,12 +95,18 @@ class FileDatasetARepository(DatasetARepository):
                 entries.extend(self._normalize(item, path) for item in raw if isinstance(item, dict))
             elif isinstance(raw, dict):
                 entries.append(self._normalize(raw, path))
-        return entries
+        self._cache[cache_key] = entries
+        return [entry.model_copy(deep=True) for entry in entries]
 
     def get_entry(self, entry_id: str) -> KnowledgeEntry | None:
         """Return one knowledge entry by ID."""
 
         return next((entry for entry in self.load_entries() if entry.id == entry_id), None)
+
+    def cache_stats(self) -> dict[str, int]:
+        """Return Dataset A cache hit/miss counters."""
+
+        return {"cache_hits": self._cache_hits, "cache_misses": self._cache_misses}
 
     def _should_skip(self, path: Path) -> bool:
         """Return whether a Dataset A JSON path should be skipped."""

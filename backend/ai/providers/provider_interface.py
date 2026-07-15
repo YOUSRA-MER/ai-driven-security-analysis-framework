@@ -8,6 +8,9 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 
 from backend.ai.utils.enums import ProviderRole
+from backend.ai.models.objective_analysis import ObjectiveAnalysis
+from backend.ai.models.prompt_generation import Prompt
+from backend.ai.models.reasoning_session import AttackFamilyAssessment, AttackHypothesis, ConfidenceAssessment, PlanDirective, PlanValidation, ReasoningSession, StrategyEvaluation
 
 
 class ProviderMessage(BaseModel):
@@ -58,6 +61,19 @@ class ProviderResponse(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
+class ReasoningResult(BaseModel):
+    """Provider-neutral explanation used by generation, never a raw payload."""
+    model_config = ConfigDict(extra="forbid")
+    summary: str
+    recommended_mutations: list[str] = Field(default_factory=list)
+    confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+
+
+class ProviderSummary(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    summary: str
+
+
 class AIProvider(ABC):
     """Abstract interface for AI provider adapters."""
 
@@ -73,4 +89,41 @@ class AIProvider(ABC):
         """
 
         raise NotImplementedError
+
+    @abstractmethod
+    async def analyze_objective(self, objective: str) -> ObjectiveAnalysis:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def reason(self, plan: Any, context: Any) -> ReasoningResult:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def generate_attack_prompt(self, prompt: Prompt) -> Prompt:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def mutate_prompt(self, prompt: Prompt, mutation: str) -> Prompt:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def optimize_prompt(self, prompt: Prompt) -> Prompt:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def summarize_response(self, response: str) -> ProviderSummary:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def reason_attack_families(self, session: ReasoningSession) -> AttackFamilyAssessment: raise NotImplementedError
+    @abstractmethod
+    async def generate_hypotheses(self, session: ReasoningSession) -> list[AttackHypothesis]: raise NotImplementedError
+    @abstractmethod
+    async def evaluate_strategies(self, session: ReasoningSession) -> StrategyEvaluation: raise NotImplementedError
+    @abstractmethod
+    async def estimate_confidence(self, session: ReasoningSession) -> ConfidenceAssessment: raise NotImplementedError
+    @abstractmethod
+    async def direct_plan(self, session: ReasoningSession) -> PlanDirective: raise NotImplementedError
+    @abstractmethod
+    async def validate_plan_reasoning(self, session: ReasoningSession) -> PlanValidation: raise NotImplementedError
 

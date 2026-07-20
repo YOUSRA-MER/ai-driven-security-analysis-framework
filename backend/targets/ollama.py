@@ -20,11 +20,13 @@ class OllamaTarget(TargetAdapter):
         base_url: str = "http://localhost:11434",
         name: str | None = None,
         options: dict[str, object] | None = None,
+        timeout_seconds: float = 120.0,
     ) -> None:
         self.model = model
         self.base_url = base_url.rstrip("/")
         self.name = name or f"ollama:{model}"
         self.options = options or {}
+        self.timeout_seconds = timeout_seconds
 
     async def send(self, messages: Sequence[Message]) -> Message:
         return await asyncio.to_thread(self._chat, messages)
@@ -42,8 +44,20 @@ class OllamaTarget(TargetAdapter):
             headers={"Content-Type": "application/json"},
             method="POST",
         )
-        with urllib.request.urlopen(request, timeout=120) as response:
+        with urllib.request.urlopen(request, timeout=self.timeout_seconds) as response:
             body = json.loads(response.read().decode("utf-8"))
         content = body.get("message", {}).get("content", "")
-        return Message(role="assistant", content=content, metadata={"target": self.name})
-
+        usage = {
+            "prompt_tokens": int(body.get("prompt_eval_count", 0) or 0),
+            "completion_tokens": int(body.get("eval_count", 0) or 0),
+        }
+        usage["total_tokens"] = usage["prompt_tokens"] + usage["completion_tokens"]
+        return Message(
+            role="assistant",
+            content=content,
+            metadata={
+                "target": self.name,
+                "usage": usage,
+                "total_duration_ns": int(body.get("total_duration", 0) or 0),
+            },
+        )

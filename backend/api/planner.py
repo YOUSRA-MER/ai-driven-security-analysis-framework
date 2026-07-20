@@ -52,6 +52,7 @@ async def test_planner(request: PlannerTestRequest) -> dict:
         "confidence": result.confidence,
         "attack_plan": plan.model_dump() if plan else None,
         "generated_prompts": result.metadata.get("generated_prompts", []),
+        "rejected_prompts": result.metadata.get("rejected_prompts", []),
         "trace": result.metadata.get("trace", []),
         "elapsed_ms": result.metadata.get("elapsed_ms"),
     }

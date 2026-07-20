@@ -2,3 +2,9 @@
 __pycache__/
 *.pyc
 .pytest_cache/
+.artifacts/
+framework/node_modules/
+framework/dist/
+framework/*.tsbuildinfo
+framework/vite.config.js
+framework/vite.config.d.ts

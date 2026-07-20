@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Protocol, runtime_checkable
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -73,6 +73,14 @@ class ReasoningResult(BaseModel):
 class ProviderSummary(BaseModel):
     model_config = ConfigDict(extra="forbid")
     summary: str
+
+
+@runtime_checkable
+class LLMProvider(Protocol):
+    """Minimal provider contract required for target LLM execution."""
+
+    async def complete(self, request: ProviderRequest) -> ProviderResponse:
+        """Return a provider-neutral completion for an ordered conversation."""
 
 
 class AIProvider(ABC):

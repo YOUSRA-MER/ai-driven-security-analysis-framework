@@ -1,6 +1,6 @@
-# AI-Driven Security Analysis Platform for LLM Applications
+# Devoteam RedLens
 
-This is a new, independent backend project for testing LLM applications against prompt injection, jailbreak, prompt leakage, indirect prompt injection, and data leakage risks.
+Devoteam RedLens is an AI security operations platform for testing LLM applications against prompt injection, jailbreak, prompt leakage, indirect prompt injection, and data leakage risks.
 
 
 ## Architecture
@@ -30,6 +30,8 @@ backend/
 - `Scorer`: converts responses into normalized vulnerability scores.
 - `AIOrchestrator`: coordinates campaigns and single attack runs.
 - `AttackMemory`: placeholder boundary for future conversation and evidence persistence.
+- `LLMProvider`: minimal provider-neutral completion contract used by planner-result execution.
+- `ExecutionResult`: typed conversation history, metrics, warnings, and structured provider errors for future evaluation.
 
 ## Attack Modules
 
@@ -49,6 +51,24 @@ backend/
 - `backend/attacks/data_leakage.py`: compatibility alias for existing data leakage workflows.
 
 ## Execution Flow
+
+### Planner-Driven Execution
+
+1. The completed AI Planner returns a `PlannerResult` containing generated prompts.
+2. `AttackExecutor.execute` validates the result without changing planner decisions or prompt content.
+3. Independent prompts use fresh provider-neutral conversations and are sent through `LLMProvider.complete`.
+4. Prompts explicitly marked as multi-turn share context only within the same conversation group.
+5. Only transient timeout, rate-limit, availability, and connection failures are retried.
+6. The executor returns one `ExecutionResult` with turn history, responses, latency metrics, errors, warnings, and planner traceability.
+7. A criteria-aware evaluator scores observable response evidence against each asset's expected behavior and success criteria.
+
+Existing `TargetAdapter` implementations are supported through a provider bridge, so Ollama, Gemini, OpenAI-compatible, and REST targets continue to use their current integration boundary.
+
+### Controlled Baseline
+
+The RedLens console requests between one and five distinct prompt variants independently of the execution turn limit. By default, Ollama receives a controlled system policy containing a run-specific synthetic canary. Prompt-injection probes attempt to override that policy, and disclosure of the exact canary is treated as concrete evidence. Disable `Controlled target baseline` only when the target application already supplies its own system policy and observable success criteria.
+
+### Legacy Strategy Execution
 
 1. A user creates an `AttackRequest` with an objective and attempt limit.
 2. `AIOrchestrator` selects one or more `AttackStrategy` classes.

@@ -2,15 +2,68 @@
 
 from __future__ import annotations
 
+import asyncio
+import inspect
+import logging
+import re
+import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Sequence
+from datetime import datetime, timezone
+from typing import Any, Awaitable, Callable, Sequence
+from urllib.error import HTTPError, URLError
+from uuid import uuid4
 
+from pydantic import ValidationError
+
+from backend.ai.models.planner_result import PlannerResult
+from backend.ai.models.prompt_generation import Prompt
+from backend.ai.providers.provider_interface import (
+    LLMProvider,
+    ProviderMessage,
+    ProviderRequest,
+    ProviderResponse,
+)
+from backend.ai.utils.enums import ProviderRole
 from backend.models.attack_result import AttackResult, AttackStatus
 from backend.models.conversation import Conversation
+from backend.models.execution_result import (
+    ExecutionConfig,
+    ExecutionError,
+    ExecutionErrorCode,
+    ExecutionMetrics,
+    ExecutionResult,
+    ExecutionStatus,
+    ExecutionTurn,
+    TurnStatus,
+)
 from backend.prompt.normalizer import PromptNormalizer
 from backend.scoring.scorer import Scorer
 from backend.targets.base_target import TargetAdapter
+from backend.targets.provider_adapter import TargetAdapterProvider
+
+
+logger = logging.getLogger(__name__)
+ProgressCallback = Callable[[dict[str, Any]], Awaitable[None] | None]
+
+
+class _MalformedProviderResponse(TypeError):
+    """Raised when a provider violates the completion response contract."""
+
+
+class _EmptyProviderResponse(ValueError):
+    """Raised when a provider returns no usable assistant content."""
+
+
+@dataclass(slots=True)
+class _CompletionOutcome:
+    """Internal retry result for one conversation turn."""
+
+    response: ProviderResponse | None
+    attempts: int
+    errors: list[ExecutionError] = field(default_factory=list)
+    attempt_latencies_ms: list[float] = field(default_factory=list)
+    interrupted: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -45,19 +98,38 @@ class AttackStrategy(ABC):
 
 
 class AttackExecutor:
-    """Executes a strategy against a target through normalized prompts."""
+    """Execute legacy strategies or completed planner results against an LLM."""
 
     def __init__(
         self,
-        target: TargetAdapter,
-        scorer: Scorer,
+        target: TargetAdapter | None = None,
+        scorer: Scorer | None = None,
         normalizer: PromptNormalizer | None = None,
+        *,
+        provider: LLMProvider | None = None,
+        execution_config: ExecutionConfig | None = None,
+        sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
     ) -> None:
+        """Initialize an executor without coupling it to a provider SDK.
+
+        ``target`` and ``scorer`` retain compatibility with existing strategy
+        campaigns. Planner-driven execution uses ``provider``; an existing
+        ``TargetAdapter`` is bridged automatically when no provider is supplied.
+        """
+
         self.target = target
         self.scorer = scorer
         self.normalizer = normalizer or PromptNormalizer()
+        self.provider = provider or (TargetAdapterProvider(target) if target else None)
+        self.execution_config = execution_config
+        self._sleep = sleep
 
     async def run(self, strategy: AttackStrategy, request: AttackRequest) -> list[AttackResult]:
+        """Run the repository's legacy strategy/scorer execution flow."""
+
+        if self.target is None or self.scorer is None:
+            raise ValueError("Legacy strategy execution requires both a target and a scorer.")
+
         results: list[AttackResult] = []
         prompts = list(strategy.build_prompts(request))[: request.max_attempts]
 
@@ -92,3 +164,983 @@ class AttackExecutor:
 
         return results
 
+    async def execute(
+        self,
+        planner_result: PlannerResult,
+        config: ExecutionConfig | None = None,
+        *,
+        progress_callback: ProgressCallback | None = None,
+    ) -> ExecutionResult:
+        """Execute every generated planner prompt against the injected provider.
+
+        This method performs no retrieval, ranking, planning, mutation, prompt
+        generation, or response evaluation. Generated prompt content is sent
+        unchanged and assistant responses are appended to the same conversation
+        before the next turn.
+        """
+
+        execution_id = str(uuid4())
+        started_at = datetime.now(timezone.utc)
+        started = time.perf_counter()
+        history: list[ExecutionTurn] = []
+        errors: list[ExecutionError] = []
+        warnings: list[str] = []
+        token_usage: dict[str, int] = {}
+        provider_calls = 0
+        retry_count = 0
+        interrupted = False
+        stopped_early = False
+
+        provider_name = self._provider_name()
+        plan = planner_result.plan if isinstance(planner_result, PlannerResult) else None
+        planner_id = self._planner_id(planner_result, plan)
+        objective = plan.objective if plan else ""
+
+        resolved_config, config_warnings = self._resolve_config(planner_result, config)
+        warnings.extend(config_warnings)
+        target_information = self._target_information(planner_result, plan)
+        requested_model = self._requested_model(resolved_config, target_information)
+        result_metadata = self._result_metadata(
+            planner_result,
+            plan,
+            resolved_config,
+            target_information,
+        )
+
+        logger.info(
+            "attack_execution_started",
+            extra={
+                "execution_id": execution_id,
+                "planner_id": planner_id,
+                "provider": provider_name,
+                "model": requested_model,
+            },
+        )
+
+        if not isinstance(planner_result, PlannerResult):
+            errors.append(
+                ExecutionError(
+                    code=ExecutionErrorCode.INVALID_PLANNER_RESULT,
+                    message="Executor received an invalid PlannerResult object.",
+                )
+            )
+            return self._finalize_execution(
+                execution_id=execution_id,
+                planner_id=planner_id,
+                objective=objective,
+                provider_name=provider_name,
+                model=requested_model,
+                status=ExecutionStatus.FAILED,
+                history=history,
+                errors=errors,
+                warnings=warnings,
+                token_usage=token_usage,
+                provider_calls=provider_calls,
+                retry_count=retry_count,
+                planned_turns=0,
+                started_at=started_at,
+                started=started,
+                metadata=result_metadata,
+            )
+
+        warnings.extend(planner_result.warnings)
+        if not planner_result.success or plan is None:
+            planner_messages = planner_result.errors or ["Planner did not produce an executable plan."]
+            errors.extend(
+                ExecutionError(
+                    code=ExecutionErrorCode.INVALID_PLANNER_RESULT,
+                    message=message,
+                )
+                for message in planner_messages
+            )
+            return self._finalize_execution(
+                execution_id=execution_id,
+                planner_id=planner_id,
+                objective=objective,
+                provider_name=provider_name,
+                model=requested_model,
+                status=ExecutionStatus.FAILED,
+                history=history,
+                errors=errors,
+                warnings=warnings,
+                token_usage=token_usage,
+                provider_calls=provider_calls,
+                retry_count=retry_count,
+                planned_turns=0,
+                started_at=started_at,
+                started=started,
+                metadata=result_metadata,
+            )
+
+        if self.provider is None:
+            errors.append(
+                ExecutionError(
+                    code=ExecutionErrorCode.PROVIDER_UNAVAILABLE,
+                    message="No target LLM provider is configured for execution.",
+                    retryable=False,
+                )
+            )
+            return self._finalize_execution(
+                execution_id=execution_id,
+                planner_id=planner_id,
+                objective=objective,
+                provider_name=provider_name,
+                model=requested_model,
+                status=ExecutionStatus.FAILED,
+                history=history,
+                errors=errors,
+                warnings=warnings,
+                token_usage=token_usage,
+                provider_calls=provider_calls,
+                retry_count=retry_count,
+                planned_turns=0,
+                started_at=started_at,
+                started=started,
+                metadata=result_metadata,
+            )
+
+        prompts, prompt_count, prompt_errors = self._extract_prompts(planner_result)
+        errors.extend(prompt_errors)
+        if not prompts:
+            if not prompt_errors:
+                errors.append(
+                    ExecutionError(
+                        code=ExecutionErrorCode.INVALID_PLANNER_RESULT,
+                        message="PlannerResult contains no generated prompts to execute.",
+                    )
+                )
+            return self._finalize_execution(
+                execution_id=execution_id,
+                planner_id=planner_id,
+                objective=objective,
+                provider_name=provider_name,
+                model=requested_model,
+                status=ExecutionStatus.FAILED,
+                history=history,
+                errors=errors,
+                warnings=warnings,
+                token_usage=token_usage,
+                provider_calls=provider_calls,
+                retry_count=retry_count,
+                planned_turns=prompt_count,
+                started_at=started_at,
+                started=started,
+                metadata=result_metadata,
+            )
+
+        if resolved_config.max_turns is not None and len(prompts) > resolved_config.max_turns:
+            omitted = len(prompts) - resolved_config.max_turns
+            prompts = prompts[: resolved_config.max_turns]
+            warnings.append(
+                f"Execution stopped at max_turns={resolved_config.max_turns}; "
+                f"{omitted} generated prompt(s) were not executed."
+            )
+            stopped_early = True
+
+        messages = [message.model_copy(deep=True) for message in resolved_config.initial_messages]
+        request_metadata = self._request_metadata(resolved_config, target_information)
+        default_conversation_mode = self._default_conversation_mode(prompts, resolved_config)
+        result_metadata["conversation_mode"] = default_conversation_mode
+        active_conversation_group: str | None = None
+
+        for turn_number, prompt in enumerate(prompts, start=1):
+            turn_started_at = datetime.now(timezone.utc)
+            turn_started = time.perf_counter()
+            prompt_metadata = {
+                **prompt.metadata,
+                "prompt_id": prompt.id,
+                "planned_turn": prompt.turn,
+                "strategy_id": prompt.strategy_id,
+                "attack_family": prompt.attack_family,
+                "asset_ids": list(prompt.asset_ids),
+            }
+            evaluation_context = resolved_config.metadata.get("evaluation_context")
+            if isinstance(evaluation_context, dict):
+                prompt_metadata.update(evaluation_context)
+            conversation_mode = self._prompt_conversation_mode(
+                prompt,
+                resolved_config,
+                default_conversation_mode,
+            )
+            prompt_metadata["conversation_mode"] = conversation_mode
+            conversation_group = self._prompt_conversation_group(
+                prompt,
+                conversation_mode,
+                planner_id,
+                resolved_config,
+            )
+            prompt_metadata["conversation_group"] = conversation_group
+            if conversation_mode == "single_turn" or conversation_group != active_conversation_group:
+                messages = [
+                    message.model_copy(deep=True)
+                    for message in resolved_config.initial_messages
+                ]
+            active_conversation_group = conversation_group
+            audit_prompt_metadata = self._sanitize_metadata(prompt_metadata)
+            messages.append(
+                ProviderMessage(
+                    role=ProviderRole.USER,
+                    content=prompt.content,
+                    metadata=prompt_metadata,
+                )
+            )
+            request = ProviderRequest(
+                messages=list(messages),
+                model=requested_model or None,
+                metadata=dict(request_metadata),
+            )
+
+            logger.info(
+                "attack_turn_started",
+                extra={
+                    "execution_id": execution_id,
+                    "turn_number": turn_number,
+                    "provider": provider_name,
+                    "model": requested_model,
+                },
+            )
+            await self._notify_progress(
+                progress_callback,
+                {
+                    "type": "turn_started",
+                    "turn_number": turn_number,
+                    "prompt_id": prompt.id,
+                    "planned_turn": prompt.turn,
+                    "provider": provider_name,
+                    "model": requested_model,
+                    "timestamp": turn_started_at.isoformat(),
+                },
+            )
+            outcome = await self._complete_with_retry(
+                request=request,
+                config=resolved_config,
+                execution_id=execution_id,
+                turn_number=turn_number,
+                progress_callback=progress_callback,
+            )
+            latency_ms = round((time.perf_counter() - turn_started) * 1000, 2)
+            provider_calls += outcome.attempts
+            retry_count += max(0, outcome.attempts - 1)
+            errors.extend(outcome.errors)
+
+            turn_metadata = {
+                **audit_prompt_metadata,
+                "attempts": outcome.attempts,
+                "retry_count": max(0, outcome.attempts - 1),
+                "attempt_latencies_ms": outcome.attempt_latencies_ms,
+            }
+
+            if outcome.interrupted:
+                interrupted = True
+                history.append(
+                    ExecutionTurn(
+                        turn_number=turn_number,
+                        prompt=prompt.content,
+                        response="",
+                        provider=provider_name,
+                        model=requested_model,
+                        latency_ms=latency_ms,
+                        timestamp=turn_started_at,
+                        status=TurnStatus.INTERRUPTED,
+                        metadata=turn_metadata,
+                    )
+                )
+                logger.warning(
+                    "attack_turn_interrupted",
+                    extra={"execution_id": execution_id, "turn_number": turn_number, "latency_ms": latency_ms},
+                )
+                await self._notify_progress(
+                    progress_callback,
+                    {
+                        "type": "turn_interrupted",
+                        "turn_number": turn_number,
+                        "latency_ms": latency_ms,
+                    },
+                )
+                break
+
+            if outcome.response is None:
+                history.append(
+                    ExecutionTurn(
+                        turn_number=turn_number,
+                        prompt=prompt.content,
+                        response="",
+                        provider=provider_name,
+                        model=requested_model,
+                        latency_ms=latency_ms,
+                        timestamp=turn_started_at,
+                        status=TurnStatus.ERROR,
+                        metadata=turn_metadata,
+                    )
+                )
+                logger.warning(
+                    "attack_turn_failed",
+                    extra={"execution_id": execution_id, "turn_number": turn_number, "latency_ms": latency_ms},
+                )
+                await self._notify_progress(
+                    progress_callback,
+                    {
+                        "type": "turn_failed",
+                        "turn_number": turn_number,
+                        "latency_ms": latency_ms,
+                        "attempts": outcome.attempts,
+                    },
+                )
+                if not resolved_config.continue_on_error:
+                    stopped_early = turn_number < len(prompts)
+                    if stopped_early:
+                        warnings.append(
+                            f"Conversation stopped after turn {turn_number} because continue_on_error is disabled."
+                        )
+                    break
+                continue
+
+            response = outcome.response
+            response_model = response.model or requested_model
+            requested_model = response_model
+            self._merge_token_usage(token_usage, response.metadata.get("usage"))
+            turn_metadata["response_metadata"] = self._sanitize_metadata(response.metadata)
+            messages.append(
+                ProviderMessage(
+                    role=ProviderRole.ASSISTANT,
+                    content=response.content,
+                    metadata=dict(response.metadata),
+                )
+            )
+            history.append(
+                ExecutionTurn(
+                    turn_number=turn_number,
+                    prompt=prompt.content,
+                    response=response.content,
+                    provider=provider_name,
+                    model=response_model,
+                    latency_ms=latency_ms,
+                    timestamp=turn_started_at,
+                    status=TurnStatus.SUCCESS,
+                    metadata=turn_metadata,
+                )
+            )
+            if outcome.errors:
+                warnings.append(
+                    f"Turn {turn_number} completed after {max(0, outcome.attempts - 1)} retry attempt(s)."
+                )
+            logger.info(
+                "attack_turn_completed",
+                extra={
+                    "execution_id": execution_id,
+                    "turn_number": turn_number,
+                    "provider": provider_name,
+                    "model": response_model,
+                    "latency_ms": latency_ms,
+                },
+            )
+            await self._notify_progress(
+                progress_callback,
+                {
+                    "type": "turn_completed",
+                    "turn_number": turn_number,
+                    "latency_ms": latency_ms,
+                    "attempts": outcome.attempts,
+                    "model": response_model,
+                    "response_preview": response.content[:240],
+                },
+            )
+
+        successful_turns = sum(turn.status is TurnStatus.SUCCESS for turn in history)
+        failed_turns = sum(turn.status is not TurnStatus.SUCCESS for turn in history)
+        if interrupted:
+            status = ExecutionStatus.INTERRUPTED
+        elif successful_turns == len(prompts) and failed_turns == 0 and not stopped_early and not prompt_errors:
+            status = ExecutionStatus.COMPLETED
+        elif successful_turns > 0:
+            status = ExecutionStatus.PARTIAL
+        else:
+            status = ExecutionStatus.FAILED
+
+        return self._finalize_execution(
+            execution_id=execution_id,
+            planner_id=planner_id,
+            objective=objective,
+            provider_name=provider_name,
+            model=requested_model,
+            status=status,
+            history=history,
+            errors=errors,
+            warnings=warnings,
+            token_usage=token_usage,
+            provider_calls=provider_calls,
+            retry_count=retry_count,
+            planned_turns=prompt_count,
+            started_at=started_at,
+            started=started,
+            metadata=result_metadata,
+        )
+
+    async def _complete_with_retry(
+        self,
+        *,
+        request: ProviderRequest,
+        config: ExecutionConfig,
+        execution_id: str,
+        turn_number: int,
+        progress_callback: ProgressCallback | None,
+    ) -> _CompletionOutcome:
+        """Call the provider and retry only failures classified as transient."""
+
+        errors: list[ExecutionError] = []
+        attempt_latencies: list[float] = []
+        max_attempts = config.max_retries + 1
+
+        for attempt in range(1, max_attempts + 1):
+            attempt_started = time.perf_counter()
+            try:
+                if self.provider is None:
+                    raise RuntimeError("No provider is configured.")
+                completion = self.provider.complete(request)
+                if not inspect.isawaitable(completion):
+                    raise _MalformedProviderResponse("Provider.complete() did not return an awaitable.")
+                raw_response = await asyncio.wait_for(completion, timeout=config.timeout_seconds)
+                response = self._coerce_provider_response(raw_response)
+                if not response.content.strip():
+                    raise _EmptyProviderResponse("Provider returned an empty assistant response.")
+                attempt_latencies.append(round((time.perf_counter() - attempt_started) * 1000, 2))
+                return _CompletionOutcome(
+                    response=response,
+                    attempts=attempt,
+                    errors=errors,
+                    attempt_latencies_ms=attempt_latencies,
+                )
+            except asyncio.CancelledError as exc:
+                attempt_latencies.append(round((time.perf_counter() - attempt_started) * 1000, 2))
+                errors.append(
+                    ExecutionError(
+                        code=ExecutionErrorCode.INTERRUPTED,
+                        message="Conversation execution was interrupted.",
+                        turn_number=turn_number,
+                        attempt=attempt,
+                        retryable=False,
+                        exception_type=type(exc).__name__,
+                    )
+                )
+                return _CompletionOutcome(
+                    response=None,
+                    attempts=attempt,
+                    errors=errors,
+                    attempt_latencies_ms=attempt_latencies,
+                    interrupted=True,
+                )
+            except Exception as exc:  # noqa: BLE001 - provider failures become typed execution errors.
+                attempt_latencies.append(round((time.perf_counter() - attempt_started) * 1000, 2))
+                code, retryable = self._classify_failure(exc)
+                should_retry = retryable and attempt < max_attempts
+                error = ExecutionError(
+                    code=code,
+                    message=self._safe_error_message(exc),
+                    turn_number=turn_number,
+                    attempt=attempt,
+                    retryable=retryable,
+                    exception_type=type(exc).__name__,
+                )
+                errors.append(error)
+                logger.warning(
+                    "attack_provider_error",
+                    extra={
+                        "execution_id": execution_id,
+                        "turn_number": turn_number,
+                        "attempt": attempt,
+                        "error_code": code.value,
+                        "retryable": retryable,
+                        "will_retry": should_retry,
+                    },
+                )
+                await self._notify_progress(
+                    progress_callback,
+                    {
+                        "type": "provider_error",
+                        "turn_number": turn_number,
+                        "attempt": attempt,
+                        "error_code": code.value,
+                        "retryable": retryable,
+                        "will_retry": should_retry,
+                        "message": error.message,
+                    },
+                )
+                if not should_retry:
+                    return _CompletionOutcome(
+                        response=None,
+                        attempts=attempt,
+                        errors=errors,
+                        attempt_latencies_ms=attempt_latencies,
+                    )
+
+                delay = min(
+                    config.retry_base_delay_seconds * (2 ** (attempt - 1)),
+                    config.retry_max_delay_seconds,
+                )
+                try:
+                    await self._sleep(delay)
+                except asyncio.CancelledError as interrupted:
+                    errors.append(
+                        ExecutionError(
+                            code=ExecutionErrorCode.INTERRUPTED,
+                            message="Conversation execution was interrupted during retry backoff.",
+                            turn_number=turn_number,
+                            attempt=attempt,
+                            retryable=False,
+                            exception_type=type(interrupted).__name__,
+                        )
+                    )
+                    return _CompletionOutcome(
+                        response=None,
+                        attempts=attempt,
+                        errors=errors,
+                        attempt_latencies_ms=attempt_latencies,
+                        interrupted=True,
+                    )
+
+        return _CompletionOutcome(
+            response=None,
+            attempts=max_attempts,
+            errors=errors,
+            attempt_latencies_ms=attempt_latencies,
+        )
+
+    async def _notify_progress(
+        self,
+        callback: ProgressCallback | None,
+        event: dict[str, Any],
+    ) -> None:
+        """Emit an execution event without allowing observers to break a run."""
+
+        if callback is None:
+            return
+        try:
+            result = callback(dict(event))
+            if inspect.isawaitable(result):
+                await result
+        except Exception as exc:  # noqa: BLE001 - observers are non-critical.
+            logger.warning(
+                "attack_progress_callback_failed",
+                extra={"error_type": type(exc).__name__},
+            )
+
+    def _extract_prompts(
+        self,
+        planner_result: PlannerResult,
+    ) -> tuple[list[Prompt], int, list[ExecutionError]]:
+        """Validate generated prompt assets without generating replacements."""
+
+        raw_prompts = planner_result.metadata.get("generated_prompts")
+        if raw_prompts is None and planner_result.plan is not None:
+            raw_prompts = planner_result.plan.metadata.get("generated_prompts")
+        if raw_prompts is None:
+            return [], 0, []
+        if not isinstance(raw_prompts, list):
+            return [], 0, [
+                ExecutionError(
+                    code=ExecutionErrorCode.INVALID_PLANNER_RESULT,
+                    message="PlannerResult generated_prompts must be a list.",
+                )
+            ]
+
+        prompts: list[Prompt] = []
+        errors: list[ExecutionError] = []
+        for index, candidate in enumerate(raw_prompts, start=1):
+            try:
+                prompt = candidate if isinstance(candidate, Prompt) else Prompt.model_validate(candidate)
+                if not prompt.content.strip():
+                    raise ValueError("Generated prompt content is empty.")
+                prompts.append(prompt)
+            except (ValidationError, TypeError, ValueError) as exc:
+                errors.append(
+                    ExecutionError(
+                        code=ExecutionErrorCode.INVALID_PLANNER_RESULT,
+                        message=f"Generated prompt {index} is invalid: {self._safe_error_message(exc)}",
+                        turn_number=index,
+                        exception_type=type(exc).__name__,
+                    )
+                )
+        return prompts, len(raw_prompts), errors
+
+    def _resolve_config(
+        self,
+        planner_result: PlannerResult | Any,
+        config: ExecutionConfig | None,
+    ) -> tuple[ExecutionConfig, list[str]]:
+        """Resolve runtime controls with explicit executor config taking priority."""
+
+        if config is not None:
+            return config, []
+        if self.execution_config is not None:
+            return self.execution_config, []
+        if not isinstance(planner_result, PlannerResult):
+            return ExecutionConfig(), []
+
+        payload: dict[str, Any] = {}
+        sources = []
+        if planner_result.plan is not None:
+            sources.append(planner_result.plan.metadata)
+        sources.append(planner_result.metadata)
+        for source in sources:
+            for key in ("execution_config", "execution_metadata"):
+                candidate = source.get(key)
+                if isinstance(candidate, dict):
+                    payload.update(
+                        {
+                            field_name: candidate[field_name]
+                            for field_name in ExecutionConfig.model_fields
+                            if field_name in candidate
+                        }
+                    )
+        if not payload:
+            return ExecutionConfig(), []
+        try:
+            return ExecutionConfig.model_validate(payload), []
+        except ValidationError as exc:
+            warning = f"Invalid planner execution metadata was ignored: {self._safe_error_message(exc)}"
+            return ExecutionConfig(), [warning]
+
+    def _default_conversation_mode(
+        self,
+        prompts: list[Prompt],
+        config: ExecutionConfig,
+    ) -> str:
+        """Resolve one conservative default conversation policy."""
+
+        if config.conversation_mode:
+            return config.conversation_mode
+        modes = {
+            str(prompt.metadata.get("conversation_mode", "")).lower()
+            for prompt in prompts
+        }
+        modes.discard("")
+        return "multi_turn" if modes == {"multi_turn"} else "single_turn"
+
+    def _prompt_conversation_mode(
+        self,
+        prompt: Prompt,
+        config: ExecutionConfig,
+        default: str,
+    ) -> str:
+        """Return explicit per-prompt conversation mode with safe fallback."""
+
+        if config.conversation_mode:
+            return config.conversation_mode
+        mode = str(prompt.metadata.get("conversation_mode", default)).lower()
+        return mode if mode in {"single_turn", "multi_turn"} else default
+
+    def _prompt_conversation_group(
+        self,
+        prompt: Prompt,
+        conversation_mode: str,
+        planner_id: str,
+        config: ExecutionConfig,
+    ) -> str:
+        """Resolve the context-sharing boundary for one prompt."""
+
+        if conversation_mode == "single_turn":
+            return prompt.id
+        configured = str(prompt.metadata.get("conversation_group", "")).strip()
+        if configured:
+            return configured
+        if config.conversation_mode == "multi_turn":
+            return planner_id
+        return prompt.strategy_id or planner_id
+
+    def _provider_name(self) -> str:
+        """Return a stable provider identifier without inspecting credentials."""
+
+        if self.provider is None:
+            return "unconfigured"
+        configured_name = getattr(self.provider, "provider_name", None)
+        if configured_name:
+            return str(configured_name)
+        class_name = self.provider.__class__.__name__.removesuffix("Provider")
+        return class_name.lower() or "provider"
+
+    def _requested_model(
+        self,
+        config: ExecutionConfig,
+        target_information: dict[str, Any],
+    ) -> str:
+        """Resolve a model identifier from execution config or target metadata."""
+
+        if config.model:
+            return config.model
+        if target_information.get("model"):
+            return str(target_information["model"])
+        if self.provider is not None and getattr(self.provider, "model", None):
+            return str(getattr(self.provider, "model"))
+        return ""
+
+    def _planner_id(self, planner_result: PlannerResult | Any, plan: Any) -> str:
+        """Resolve planner traceability without changing PlannerResult."""
+
+        if isinstance(planner_result, PlannerResult):
+            planner_id = planner_result.metadata.get("planner_id")
+            if planner_id:
+                return str(planner_id)
+        if plan is not None and getattr(plan, "id", None):
+            return str(plan.id)
+        return ""
+
+    def _target_information(self, planner_result: PlannerResult | Any, plan: Any) -> dict[str, Any]:
+        """Merge target information carried in existing planner metadata."""
+
+        information: dict[str, Any] = {}
+        sources = []
+        if plan is not None:
+            sources.append(plan.metadata)
+        if isinstance(planner_result, PlannerResult):
+            sources.append(planner_result.metadata)
+        for source in sources:
+            for key in ("target", "target_information"):
+                candidate = source.get(key)
+                if isinstance(candidate, dict):
+                    information.update(candidate)
+        return information
+
+    def _request_metadata(
+        self,
+        config: ExecutionConfig,
+        target_information: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Build provider request options from explicit execution metadata."""
+
+        metadata: dict[str, Any] = {}
+        target_metadata = target_information.get("request_metadata")
+        if isinstance(target_metadata, dict):
+            metadata.update(target_metadata)
+        metadata.update(config.request_metadata)
+        return metadata
+
+    def _result_metadata(
+        self,
+        planner_result: PlannerResult | Any,
+        plan: Any,
+        config: ExecutionConfig,
+        target_information: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Preserve evaluation-relevant planner annotations without prompt duplication."""
+
+        custom_metadata = self._sanitize_metadata(config.metadata)
+        metadata: dict[str, Any] = dict(custom_metadata) if isinstance(custom_metadata, dict) else {}
+        metadata.update(
+            {
+                "target_information": self._sanitize_metadata(target_information),
+                "execution_config": self._sanitize_metadata(
+                    config.model_dump(exclude={"initial_messages"})
+                ),
+            }
+        )
+        if not isinstance(planner_result, PlannerResult):
+            return metadata
+        metadata.update(
+            {
+                "planner_stage": planner_result.stage.value,
+                "planner_confidence": planner_result.confidence,
+                "planner_confidence_level": planner_result.confidence_level.value,
+            }
+        )
+        if plan is not None:
+            metadata.update(
+                {
+                    "selected_attack_family": plan.selected_attack_family,
+                    "selected_strategy": plan.selected_strategy,
+                    "plan_metadata": self._sanitize_metadata(
+                        {
+                            key: value
+                            for key, value in plan.metadata.items()
+                            if key not in {"generated_prompts", "reasoning_session"}
+                        }
+                    ),
+                }
+            )
+        return metadata
+
+    def _coerce_provider_response(self, response: Any) -> ProviderResponse:
+        """Validate provider output while accepting a serialized response mapping."""
+
+        if isinstance(response, ProviderResponse):
+            return response
+        try:
+            return ProviderResponse.model_validate(response)
+        except (ValidationError, TypeError, ValueError) as exc:
+            raise _MalformedProviderResponse("Provider returned a malformed response object.") from exc
+
+    def _classify_failure(self, exc: Exception) -> tuple[ExecutionErrorCode, bool]:
+        """Classify provider failures and identify transient retry candidates."""
+
+        if isinstance(exc, _MalformedProviderResponse):
+            return ExecutionErrorCode.MALFORMED_RESPONSE, False
+        if isinstance(exc, _EmptyProviderResponse):
+            return ExecutionErrorCode.EMPTY_RESPONSE, False
+
+        chain = self._exception_chain(exc)
+        status_code = next(
+            (
+                code
+                for item in chain
+                for code in [self._status_code(item)]
+                if code is not None
+            ),
+            None,
+        )
+        message = " ".join(str(item).lower() for item in chain)
+
+        if status_code == 429 or "rate limit" in message or "http 429" in message:
+            return ExecutionErrorCode.RATE_LIMIT, True
+        if (
+            status_code in {408, 504}
+            or any(isinstance(item, (asyncio.TimeoutError, TimeoutError)) for item in chain)
+            or "timed out" in message
+            or "timeout" in message
+        ):
+            return ExecutionErrorCode.TIMEOUT, True
+        if status_code in {500, 502, 503, 520, 522, 524} or "provider unavailable" in message:
+            return ExecutionErrorCode.PROVIDER_UNAVAILABLE, True
+        if (
+            any(isinstance(item, (ConnectionError, URLError)) for item in chain)
+            or "connection error" in message
+            or "connection failed" in message
+            or "connection refused" in message
+        ):
+            return ExecutionErrorCode.CONNECTION_FAILURE, True
+        return ExecutionErrorCode.PROVIDER_FAILURE, False
+
+    def _exception_chain(self, exc: Exception) -> list[BaseException]:
+        """Return an exception and its explicit causes without looping."""
+
+        chain: list[BaseException] = []
+        current: BaseException | None = exc
+        seen: set[int] = set()
+        while current is not None and id(current) not in seen:
+            chain.append(current)
+            seen.add(id(current))
+            current = current.__cause__ or current.__context__
+        return chain
+
+    def _status_code(self, exc: BaseException) -> int | None:
+        """Extract an HTTP-style status code from common provider exceptions."""
+
+        if isinstance(exc, HTTPError):
+            return int(exc.code)
+        for attribute in ("status_code", "status"):
+            value = getattr(exc, attribute, None)
+            if isinstance(value, int):
+                return value
+        match = re.search(r"\b(?:http\s*)?(\d{3})\b", str(exc), re.IGNORECASE)
+        return int(match.group(1)) if match else None
+
+    def _safe_error_message(self, exc: BaseException) -> str:
+        """Return a bounded diagnostic message suitable for result payloads."""
+
+        message = str(exc).strip() or type(exc).__name__
+        message = re.sub(
+            r"(?i)((?:api[_-]?key|authorization|token|secret|password|credential)\s*[:=]\s*)(?:bearer\s+)?[^\s,;]+",
+            r"\1[REDACTED]",
+            message,
+        )
+        return message[:1000]
+
+    def _sanitize_metadata(self, value: Any) -> Any:
+        """Recursively redact credential-like fields from audit metadata."""
+
+        if isinstance(value, dict):
+            sanitized: dict[str, Any] = {}
+            for key, item in value.items():
+                normalized_key = str(key).lower().replace("-", "_")
+                if any(
+                    marker in normalized_key
+                    for marker in ("api_key", "apikey", "authorization", "token", "secret", "password", "credential")
+                ):
+                    sanitized[str(key)] = "[REDACTED]"
+                else:
+                    sanitized[str(key)] = self._sanitize_metadata(item)
+            return sanitized
+        if isinstance(value, list):
+            return [self._sanitize_metadata(item) for item in value]
+        if isinstance(value, tuple):
+            return [self._sanitize_metadata(item) for item in value]
+        return value
+
+    def _merge_token_usage(self, aggregate: dict[str, int], usage: Any) -> None:
+        """Aggregate numeric provider usage fields without assuming one SDK schema."""
+
+        if not isinstance(usage, dict):
+            return
+        for key, value in usage.items():
+            if isinstance(value, int) and not isinstance(value, bool):
+                aggregate[key] = aggregate.get(key, 0) + value
+
+    def _finalize_execution(
+        self,
+        *,
+        execution_id: str,
+        planner_id: str,
+        objective: str,
+        provider_name: str,
+        model: str,
+        status: ExecutionStatus,
+        history: list[ExecutionTurn],
+        errors: list[ExecutionError],
+        warnings: list[str],
+        token_usage: dict[str, int],
+        provider_calls: int,
+        retry_count: int,
+        planned_turns: int,
+        started_at: datetime,
+        started: float,
+        metadata: dict[str, Any],
+    ) -> ExecutionResult:
+        """Build one consistent result for successful and failed executions."""
+
+        ended_at = datetime.now(timezone.utc)
+        total_latency = round((time.perf_counter() - started) * 1000, 2)
+        latencies = [turn.latency_ms for turn in history]
+        successful_turns = sum(turn.status is TurnStatus.SUCCESS for turn in history)
+        failed_turns = len(history) - successful_turns
+        metrics = ExecutionMetrics(
+            planned_turns=planned_turns,
+            attempted_turns=len(history),
+            successful_turns=successful_turns,
+            failed_turns=failed_turns,
+            provider_calls=provider_calls,
+            retry_count=retry_count,
+            average_latency_ms=round(sum(latencies) / len(latencies), 2) if latencies else 0.0,
+            minimum_latency_ms=min(latencies, default=0.0),
+            maximum_latency_ms=max(latencies, default=0.0),
+            token_usage=dict(token_usage),
+            started_at=started_at,
+            ended_at=ended_at,
+        )
+        result = ExecutionResult(
+            execution_id=execution_id,
+            planner_id=planner_id,
+            objective=objective,
+            provider=provider_name,
+            model=model,
+            execution_status=status,
+            conversation_history=history,
+            responses=[turn.response for turn in history if turn.status is TurnStatus.SUCCESS],
+            execution_metrics=metrics,
+            total_latency=total_latency,
+            total_turns=len(history),
+            errors=errors,
+            warnings=warnings,
+            metadata=metadata,
+        )
+        logger.info(
+            "attack_execution_ended",
+            extra={
+                "execution_id": execution_id,
+                "planner_id": planner_id,
+                "provider": provider_name,
+                "model": model,
+                "execution_status": status.value,
+                "total_turns": len(history),
+                "total_latency_ms": total_latency,
+                "error_count": len(errors),
+            },
+        )
+        return result

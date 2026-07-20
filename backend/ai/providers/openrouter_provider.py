@@ -228,7 +228,7 @@ class OpenRouterProvider(AIProvider):
         return await self._structured(
             task=(
                 "Optimize this authorized assessment prompt for clarity and test "
-                "observability. Preserve the objective placeholder and safety scope. "
+                "observability. Integrate the objective, preserve safety scope, and return no placeholders. "
                 "Return the Prompt JSON object only."
             ),
             payload={"prompt": prompt.model_dump()},
@@ -624,6 +624,9 @@ class OpenRouterProvider(AIProvider):
 
         return {
             "objective": session.assessment_objective,
+            "requested_prompt_count": session.metadata.get("requested_prompt_count", 3),
+            "target_profile": session.metadata.get("target_profile", ""),
+            "attack_context": session.metadata.get("attack_context", ""),
             "objective_analysis": self._safe_dump(session.objective_analysis),
             "retrieved_knowledge": [
                 {

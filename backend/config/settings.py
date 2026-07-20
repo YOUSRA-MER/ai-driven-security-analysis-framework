@@ -41,7 +41,7 @@ class Settings(BaseModel):
     openrouter_base_url: str = "https://openrouter.ai/api/v1"
     openrouter_timeout_seconds: float = Field(default=60.0, gt=0)
     openrouter_max_retries: int = Field(default=3, ge=1)
-    app_name: str = "AI-Driven Security Analysis Framework"
+    app_name: str = "Devoteam RedLens"
 
     @property
     def openrouter_configured(self) -> bool:
@@ -76,5 +76,5 @@ def get_settings() -> Settings:
         openrouter_base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1").rstrip("/"),
         openrouter_timeout_seconds=float(os.getenv("OPENROUTER_TIMEOUT_SECONDS", "60")),
         openrouter_max_retries=int(os.getenv("OPENROUTER_MAX_RETRIES", "3")),
-        app_name=os.getenv("OPENROUTER_APP_NAME", "AI-Driven Security Analysis Framework"),
+        app_name=os.getenv("OPENROUTER_APP_NAME", "Devoteam RedLens"),
     )

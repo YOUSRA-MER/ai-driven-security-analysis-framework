@@ -10,7 +10,7 @@ class OpenRouterSettings(BaseModel):
     model: str = "qwen/qwen3-235b-a22b:free"
     timeout_seconds: float = Field(default=30.0, gt=0)
     site_url: str | None = None
-    app_name: str = "AI-Driven Security Analysis Framework"
+    app_name: str = "Devoteam RedLens"
 
     @classmethod
     def from_environment(cls) -> "OpenRouterSettings":

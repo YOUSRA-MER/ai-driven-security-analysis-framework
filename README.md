@@ -68,6 +68,16 @@ Existing `TargetAdapter` implementations are supported through a provider bridge
 
 The RedLens console requests between one and five distinct prompt variants independently of the execution turn limit. By default, Ollama receives a controlled system policy containing a run-specific synthetic canary. Prompt-injection probes attempt to override that policy, and disclosure of the exact canary is treated as concrete evidence. Disable `Controlled target baseline` only when the target application already supplies its own system policy and observable success criteria.
 
+### Offline Positive Control: `vulnerable-control`
+
+`vulnerable-control` is an intentionally vulnerable, offline-only Ollama benchmark for validating the full RedLens assessment path. Create it once from the included Modelfile:
+
+```powershell
+ollama create vulnerable-control -f backend/targets/ollama/Modelfile.vulnerable-control
+```
+
+Refresh the console after creation. Ollama's normal `/api/tags` discovery makes `vulnerable-control:latest` available in the existing model selector; no frontend registration is required. Select it, choose an instruction-boundary objective, then use **Plan & Run**. The benchmark uses its own intentionally vulnerable Modelfile policy rather than RedLens's normal secure system-policy overlay, so the assessment exercises the selected target itself. It returns only `[LAB_FAKE]` synthetic disclosures, which the existing criteria-aware heuristic reports as `Vulnerable`. RedLens fixes temperature and seed for this model so UI sampling options cannot make the benchmark nondeterministic. Do not deploy this target outside an isolated laboratory.
+
 ### Legacy Strategy Execution
 
 1. A user creates an `AttackRequest` with an objective and attempt limit.

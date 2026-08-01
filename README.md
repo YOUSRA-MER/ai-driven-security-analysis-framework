@@ -64,6 +64,8 @@ backend/
 
 Existing `TargetAdapter` implementations are supported through a provider bridge, so Ollama, Gemini, OpenAI-compatible, and REST targets continue to use their current integration boundary.
 
+Uploaded RAG knowledge sources are stored under `backend/uploads/` and indexed in a persistent ChromaDB collection under `backend/uploads/.chromadb/`, allowing retrieval context to remain available across backend restarts.
+
 ### Controlled Baseline
 
 The RedLens console requests between one and five distinct prompt variants independently of the execution turn limit. By default, Ollama receives a controlled system policy containing a run-specific synthetic canary. Prompt-injection probes attempt to override that policy, and disclosure of the exact canary is treated as concrete evidence. Disable `Controlled target baseline` only when the target application already supplies its own system policy and observable success criteria.

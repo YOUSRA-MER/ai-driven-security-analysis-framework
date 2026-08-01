@@ -1,13 +1,16 @@
-"""In-memory document ingestion and controlled RAG poisoning context construction."""
+"""Document ingestion and controlled RAG poisoning context construction."""
 
 from __future__ import annotations
 
 import base64
 import binascii
+import hashlib
 import io
+import math
 import re
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -17,6 +20,10 @@ MAX_EXTRACTED_CHARS = 500_000
 CHUNK_SIZE = 1_200
 CHUNK_OVERLAP = 160
 SUPPORTED_EXTENSIONS = {".txt", ".md", ".pdf"}
+UPLOAD_DIR = Path(__file__).resolve().parents[1] / "uploads"
+CHROMA_DIRNAME = ".chromadb"
+CHROMA_COLLECTION = "rag_documents"
+EMBEDDING_DIMENSIONS = 384
 
 
 class RagDocumentError(ValueError):
@@ -49,7 +56,7 @@ class RagChunk(BaseModel):
 
 
 class RagTestContext(BaseModel):
-    """Ephemeral source context used to construct controlled retrieval turns."""
+    """Source context used to construct controlled retrieval turns."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -57,6 +64,8 @@ class RagTestContext(BaseModel):
     content_type: str
     size_bytes: int
     source_id: str
+    stored_filename: str = ""
+    stored_path: str = ""
     extracted_text: str
     chunks: list[RagChunk]
 
@@ -71,7 +80,7 @@ class RagTestContext(BaseModel):
         }
 
 
-def ingest_rag_document(document: RagDocumentInput) -> RagTestContext:
+def ingest_rag_document(document: RagDocumentInput, *, upload_dir: Path | None = None) -> RagTestContext:
     """Validate, extract, and deterministically chunk one uploaded document."""
 
     filename = Path(document.filename.replace("\\", "/")).name.strip()
@@ -96,19 +105,24 @@ def ingest_rag_document(document: RagDocumentInput) -> RagTestContext:
     if len(text) > MAX_EXTRACTED_CHARS:
         raise RagDocumentError("document_too_large", "Extracted document text exceeds the 500,000 character limit.")
 
+    stored_path = _save_uploaded_document(raw, extension, upload_dir=upload_dir or UPLOAD_DIR)
     source_id = f"source-{_slug(Path(filename).stem)[:48] or 'document'}"
     chunks = [
         RagChunk(id=f"{source_id}:chunk-{index + 1:03d}", source_id=source_id, index=index, text=chunk)
         for index, chunk in enumerate(_chunk_text(text))
     ]
-    return RagTestContext(
+    context = RagTestContext(
         filename=filename,
         content_type=document.content_type,
         size_bytes=len(raw),
         source_id=source_id,
+        stored_filename=stored_path.name,
+        stored_path=str(stored_path),
         extracted_text=text,
         chunks=chunks,
     )
+    _index_chunks(context, upload_dir=stored_path.parent)
+    return context
 
 
 def build_poisoned_retrieval_prompt(
@@ -120,7 +134,7 @@ def build_poisoned_retrieval_prompt(
 ) -> tuple[str, dict[str, Any]]:
     """Construct an assessment-scoped retrieval envelope without altering source data."""
 
-    selected = _select_chunks(context.chunks, prompt, limit=2)
+    selected = _select_chunks(context, prompt, limit=2)
     legitimate = "\n\n".join(
         f"[SOURCE {chunk.id}]\n{chunk.text}" for chunk in selected
     )
@@ -164,6 +178,112 @@ def _extract_text(raw: bytes, extension: str) -> str:
         raise RagDocumentError("invalid_pdf", "PDF could not be parsed as a text document.") from exc
 
 
+def _save_uploaded_document(raw: bytes, extension: str, *, upload_dir: Path) -> Path:
+    try:
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        for _ in range(3):
+            stored_path = upload_dir / f"{uuid4()}{extension}"
+            try:
+                handle = stored_path.open("xb")
+                try:
+                    with handle:
+                        handle.write(raw)
+                except OSError:
+                    stored_path.unlink(missing_ok=True)
+                    raise
+                return stored_path
+            except FileExistsError:
+                continue
+    except OSError as exc:
+        raise RagDocumentError("upload_storage_failed", "RAG knowledge source could not be saved.") from exc
+    raise RagDocumentError("upload_storage_failed", "RAG knowledge source could not be saved.")
+
+
+def _index_chunks(context: RagTestContext, *, upload_dir: Path | None = None) -> None:
+    if not context.chunks:
+        return
+    client: Any | None = None
+    try:
+        client, collection = _chroma_collection(upload_dir=upload_dir or _context_upload_dir(context))
+        collection.upsert(
+            ids=[_chroma_chunk_id(context, chunk) for chunk in context.chunks],
+            documents=[chunk.text for chunk in context.chunks],
+            embeddings=[_embed_text(chunk.text) for chunk in context.chunks],
+            metadatas=[
+                {
+                    "source_id": context.source_id,
+                    "chunk_id": chunk.id,
+                    "chunk_index": chunk.index,
+                    "filename": context.filename,
+                    "stored_filename": context.stored_filename,
+                    "stored_path": context.stored_path,
+                }
+                for chunk in context.chunks
+            ],
+        )
+    except RagDocumentError:
+        raise
+    except Exception as exc:  # noqa: BLE001 - vector-store failures become bounded API errors.
+        raise RagDocumentError("vector_index_failed", "RAG knowledge source could not be indexed.") from exc
+    finally:
+        _close_chroma_client(client)
+
+
+def _chroma_collection(*, upload_dir: Path) -> tuple[Any, Any]:
+    try:
+        import chromadb
+        from chromadb.config import Settings
+    except ImportError as exc:  # pragma: no cover - dependency validation is environment-specific.
+        raise RagDocumentError("vector_index_unavailable", "ChromaDB support is not installed.") from exc
+
+    chroma_dir = upload_dir / CHROMA_DIRNAME
+    try:
+        chroma_dir.mkdir(parents=True, exist_ok=True)
+        client = chromadb.PersistentClient(
+            path=str(chroma_dir),
+            settings=Settings(anonymized_telemetry=False),
+        )
+        collection = client.get_or_create_collection(
+            name=CHROMA_COLLECTION,
+            metadata={"hnsw:space": "cosine"},
+        )
+        return client, collection
+    except Exception as exc:  # noqa: BLE001 - vector-store failures become bounded API errors.
+        raise RagDocumentError("vector_index_failed", "RAG vector index could not be opened.") from exc
+
+
+def _query_chunks(context: RagTestContext, prompt: str, *, limit: int, reindex: bool = True) -> list[RagChunk]:
+    client: Any | None = None
+    try:
+        client, collection = _chroma_collection(upload_dir=_context_upload_dir(context))
+        result = collection.query(
+            query_embeddings=[_embed_text(prompt)],
+            n_results=limit,
+            where=_query_filter(context),
+            include=["documents", "metadatas"],
+        )
+    except RagDocumentError:
+        raise
+    except Exception as exc:  # noqa: BLE001 - vector-store failures become bounded API errors.
+        raise RagDocumentError("vector_index_failed", "RAG vector index could not be queried.") from exc
+    finally:
+        _close_chroma_client(client)
+
+    documents = (result.get("documents") or [[]])[0]
+    metadatas = (result.get("metadatas") or [[]])[0]
+    chunks = [
+        _chunk_from_chroma(document, metadata, fallback_index=index, fallback_source_id=context.source_id)
+        for index, (document, metadata) in enumerate(zip(documents, metadatas))
+        if isinstance(document, str)
+    ]
+    selected = [chunk for chunk in chunks if chunk is not None]
+    if selected or not reindex or not context.chunks:
+        return selected[:limit]
+
+    _index_chunks(context, upload_dir=_context_upload_dir(context))
+    return _query_chunks(context, prompt, limit=limit, reindex=False)
+
+
 def _normalize_text(text: str) -> str:
     text = text.replace("\x00", "")
     lines = [re.sub(r"[ \t]+", " ", line).strip() for line in text.splitlines()]
@@ -188,13 +308,68 @@ def _chunk_text(text: str) -> list[str]:
     return chunks
 
 
-def _select_chunks(chunks: list[RagChunk], prompt: str, *, limit: int) -> list[RagChunk]:
-    terms = set(re.findall(r"[a-z0-9]{4,}", prompt.lower()))
-    ranked = sorted(
-        chunks,
-        key=lambda chunk: (-len(terms & set(re.findall(r"[a-z0-9]{4,}", chunk.text.lower()))), chunk.index),
-    )
-    return ranked[:limit]
+def _select_chunks(context: RagTestContext, prompt: str, *, limit: int) -> list[RagChunk]:
+    return _query_chunks(context, prompt, limit=limit)
+
+
+def _chunk_from_chroma(
+    document: str,
+    metadata: Any,
+    *,
+    fallback_index: int,
+    fallback_source_id: str,
+) -> RagChunk | None:
+    if not isinstance(metadata, dict):
+        metadata = {}
+    try:
+        index = int(metadata.get("chunk_index", fallback_index))
+    except (TypeError, ValueError):
+        index = fallback_index
+    source_id = str(metadata.get("source_id") or fallback_source_id)
+    chunk_id = str(metadata.get("chunk_id") or f"{source_id}:chunk-{index + 1:03d}")
+    text = document.strip()
+    if not text:
+        return None
+    return RagChunk(id=chunk_id, source_id=source_id, index=index, text=text)
+
+
+def _query_filter(context: RagTestContext) -> dict[str, str]:
+    if context.stored_filename:
+        return {"stored_filename": context.stored_filename}
+    return {"source_id": context.source_id}
+
+
+def _chroma_chunk_id(context: RagTestContext, chunk: RagChunk) -> str:
+    if context.stored_filename:
+        return f"{context.stored_filename}:{chunk.id}"
+    return chunk.id
+
+
+def _context_upload_dir(context: RagTestContext) -> Path:
+    if context.stored_path:
+        return Path(context.stored_path).resolve().parent
+    return UPLOAD_DIR
+
+
+def _close_chroma_client(client: Any | None) -> None:
+    if client is None:
+        return
+    close = getattr(client, "close", None)
+    if callable(close):
+        close()
+
+
+def _embed_text(text: str) -> list[float]:
+    vector = [0.0] * EMBEDDING_DIMENSIONS
+    for token in re.findall(r"[a-z0-9]{3,}", text.lower()):
+        digest = hashlib.blake2b(token.encode("utf-8"), digest_size=8).digest()
+        index = int.from_bytes(digest[:4], "big") % EMBEDDING_DIMENSIONS
+        sign = 1.0 if digest[4] < 128 else -1.0
+        vector[index] += sign
+    norm = math.sqrt(sum(value * value for value in vector))
+    if norm == 0:
+        return vector
+    return [value / norm for value in vector]
 
 
 def _slug(value: str) -> str:

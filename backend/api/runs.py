@@ -8,6 +8,7 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
+from pathlib import Path
 from typing import Any, Callable
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -243,9 +244,11 @@ class AttackRunCoordinator:
         self,
         planner_factory: PlannerFactory | None = None,
         target_factory: TargetFactory | None = None,
+        upload_dir: Path | None = None,
     ) -> None:
         self._planner_factory = planner_factory or self._default_planner
         self._target_factory = target_factory or self._default_target
+        self._upload_dir = upload_dir
         self.runs: dict[str, AttackRun] = {}
         self.tasks: dict[str, asyncio.Task[None]] = {}
 
@@ -253,7 +256,12 @@ class AttackRunCoordinator:
         is_rag = request.objective_preset == "rag-poisoning"
         if is_rag and request.rag_document is None:
             raise RagDocumentError("rag_document_required", "RAG Poisoning requires a PDF, TXT, or MD knowledge source.")
-        rag_context = ingest_rag_document(request.rag_document) if is_rag and request.rag_document else None
+        rag_context = (
+            ingest_rag_document(request.rag_document, upload_dir=self._upload_dir)
+            if is_rag and request.rag_document
+            else None
+        )
+        request = request.model_copy(update={"rag_document": None})
         run = AttackRun(run_id=str(uuid4()), request=request, rag_context=rag_context)
         run.add_event("run_queued", "Run queued")
         if rag_context is not None:
@@ -602,8 +610,13 @@ async def create_run(request: RunCreateRequest) -> dict[str, Any]:
     try:
         return coordinator.create(request).public()
     except RagDocumentError as exc:
+        status_code = (
+            status.HTTP_500_INTERNAL_SERVER_ERROR
+            if exc.code in {"upload_storage_failed", "vector_index_failed", "vector_index_unavailable"}
+            else status.HTTP_422_UNPROCESSABLE_ENTITY
+        )
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status_code,
             detail={"code": exc.code, "message": str(exc)},
         ) from exc
 

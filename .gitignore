@@ -4,6 +4,7 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .artifacts/
+backend/uploads/
 framework/node_modules/
 framework/dist/
 framework/*.tsbuildinfo

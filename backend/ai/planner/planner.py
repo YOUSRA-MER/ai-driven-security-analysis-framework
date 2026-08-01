@@ -10,6 +10,7 @@ from abc import ABC, abstractmethod
 from backend.ai.generation.prompt_finalizer import PromptFinalizer
 from backend.ai.generation.prompt_mutator import ControlledPromptMutator
 from backend.ai.models.attack_asset import AttackAsset
+from backend.ai.models.knowledge_entry import KnowledgeEntry
 from backend.ai.models.planner_context import PlannerContext
 from backend.ai.models.planner_result import PlannerError, PlannerResult
 from backend.ai.models.prompt_generation import Prompt
@@ -27,6 +28,13 @@ from backend.ai.utils.enums import PlanningStage
 
 
 logger = logging.getLogger(__name__)
+
+RAG_EXECUTION_CONSTRAINT: dict[str, object] = {
+    "canonical_family": "rag_poisoning",
+    "planner_family": "af-retrieval-attacks",
+    "strategy_families": ["af-retrieval-attacks"],
+    "dataset_b_categories": ["rag_poisoning"],
+}
 
 
 FAMILY_RECOVERY_PROMPTS: dict[str, tuple[str, ...]] = {
@@ -282,6 +290,7 @@ class AIPlanner(Planner):
                 use_provider = False
             elif self.provider:
                 context.objective_analysis = self._stabilize_objective_analysis(context)
+            self._apply_execution_intent_constraints(context)
             metrics["llm_time"] += self._elapsed_ms(stage_started) if self.provider else 0.0
             logger.info(
                 "Planner objective analysis completed",
@@ -295,8 +304,8 @@ class AIPlanner(Planner):
                 asyncio.to_thread(self.retriever.retrieve_knowledge, context.objective_analysis, 10),
                 asyncio.to_thread(self.retriever.retrieve_attack_assets, context.objective_analysis, 10),
             )
-            context.knowledge_entries = knowledge_entries
-            context.attack_assets = attack_assets
+            context.knowledge_entries = self._constrain_knowledge_entries(context, knowledge_entries)
+            context.attack_assets = self._constrain_attack_assets(context, attack_assets)
             metrics["retrieval_time"] = self._elapsed_ms(stage_started)
             logger.info("Planner retrieval completed", extra={"session_id": context.session_id, "elapsed_ms": metrics["retrieval_time"]})
             if hasattr(self.retriever, "cache_stats"):
@@ -414,13 +423,15 @@ class AIPlanner(Planner):
 
             context.stage = PlanningStage.BUILDING_PLAN
             plan = self.attack_planner.build_plan(context, selected_strategies, selected_assets)
-            if selected_family_ids:
+            if selected_family_ids and not self._is_rag_execution_intent(context):
                 plan.selected_attack_family = selected_family_ids[0]
+            plan = self._constrain_plan(context, plan)
             if reasoning_summary:
                 plan.reasoning_summary = reasoning_summary
 
             context.stage = PlanningStage.OPTIMIZING_PLAN
             plan = self.attack_optimizer.optimize(context, plan)
+            plan = self._constrain_plan(context, plan)
 
             session.metadata["selected_asset_ids"] = [asset.id for asset in plan.assets[: min(5, len(plan.assets))]]
             generated_prompt_result = None
@@ -452,6 +463,7 @@ class AIPlanner(Planner):
                 provider_prompts=provider_prompts,
                 requested_count=requested_prompt_count,
             )
+            optimized_prompts = self._constrain_prompt_families(context, plan, optimized_prompts)
             candidate_prompt_count = len(optimized_prompts)
             validation_started = time.perf_counter()
             prompt_finalization = self.prompt_finalizer.finalize(
@@ -597,6 +609,178 @@ class AIPlanner(Planner):
                 "metadata": metadata,
             }
         )
+
+    def _apply_execution_intent_constraints(self, context: PlannerContext) -> None:
+        """Apply caller-provided routing intent before dataset retrieval."""
+
+        intent = self._execution_intent(context)
+        if not self._is_rag_execution_intent(context) or context.objective_analysis is None:
+            return
+
+        canonical_family = str(intent.get("canonical_family") or RAG_EXECUTION_CONSTRAINT["canonical_family"])
+        planner_family = str(intent.get("planner_family") or RAG_EXECUTION_CONSTRAINT["planner_family"])
+        analysis = context.objective_analysis
+        metadata = dict(analysis.metadata)
+        metadata["pre_intent_recommended_categories"] = list(analysis.recommended_categories)
+        metadata["pre_intent_source_categories"] = list(metadata.get("source_categories", []))
+        metadata["execution_intent"] = intent
+        metadata["canonical_family"] = canonical_family
+        metadata["planner_family"] = planner_family
+        metadata["source_categories"] = [canonical_family, planner_family]
+        context.objective_analysis = analysis.model_copy(
+            update={
+                "target_capabilities": list(dict.fromkeys([*analysis.target_capabilities, "retrieval"])),
+                "risk_themes": list(dict.fromkeys([*analysis.risk_themes, canonical_family, "retrieval", "poisoning"])),
+                "recommended_categories": [canonical_family],
+                "metadata": metadata,
+            }
+        )
+        context.metadata["execution_intent"] = intent
+        context.metadata["canonical_family"] = canonical_family
+        if "execution_intent:rag_poisoning" not in context.constraints:
+            context.constraints.append("execution_intent:rag_poisoning")
+        if "Applied canonical RAG poisoning execution intent." not in context.trace:
+            context.trace.append("Applied canonical RAG poisoning execution intent.")
+
+    def _constrain_knowledge_entries(
+        self,
+        context: PlannerContext,
+        entries: list[KnowledgeEntry],
+    ) -> list[KnowledgeEntry]:
+        """Keep ranked Dataset A results within the requested RAG family."""
+
+        if not self._is_rag_execution_intent(context):
+            return entries
+        allowed_families = self._allowed_strategy_families(context)
+        constrained = [
+            entry
+            for entry in entries
+            if self._knowledge_entry_matches_family(entry, allowed_families)
+        ]
+        context.metadata["rag_knowledge_constraint"] = {
+            "input_count": len(entries),
+            "output_count": len(constrained),
+            "allowed_families": sorted(allowed_families),
+        }
+        return constrained
+
+    def _constrain_attack_assets(
+        self,
+        context: PlannerContext,
+        assets: list[AttackAsset],
+    ) -> list[AttackAsset]:
+        """Keep ranked Dataset B assets within the canonical RAG category."""
+
+        if not self._is_rag_execution_intent(context):
+            return assets
+        allowed_categories = self._allowed_dataset_b_categories(context)
+        constrained = [
+            asset
+            for asset in assets
+            if self._normalize_family(asset.category) in allowed_categories
+        ]
+        context.metadata["rag_asset_constraint"] = {
+            "input_count": len(assets),
+            "output_count": len(constrained),
+            "allowed_categories": sorted(allowed_categories),
+        }
+        return constrained
+
+    def _constrain_plan(self, context: PlannerContext, plan):
+        """Ensure the final plan keeps the canonical RAG execution family."""
+
+        if not self._is_rag_execution_intent(context):
+            return plan
+        intent = self._execution_intent(context)
+        planner_family = str(intent.get("planner_family") or RAG_EXECUTION_CONSTRAINT["planner_family"])
+        canonical_family = str(intent.get("canonical_family") or RAG_EXECUTION_CONSTRAINT["canonical_family"])
+        plan.selected_attack_family = planner_family
+        plan.metadata["execution_intent"] = intent
+        plan.metadata["canonical_family"] = canonical_family
+        return plan
+
+    def _constrain_prompt_families(
+        self,
+        context: PlannerContext,
+        plan,
+        prompts: list[Prompt],
+    ) -> list[Prompt]:
+        """Normalize executable prompt families to RAG poisoning intent."""
+
+        if not self._is_rag_execution_intent(context):
+            return prompts
+        canonical_family = str(self._execution_intent(context).get("canonical_family") or "rag_poisoning")
+        allowed_asset_ids = {
+            asset.id
+            for asset in [*plan.assets, *plan.retrieved_assets]
+            if self._normalize_family(asset.category) in self._allowed_dataset_b_categories(context)
+        }
+        constrained: list[Prompt] = []
+        for prompt in prompts:
+            prompt_asset_ids = set(prompt.asset_ids)
+            prompt_family = self._normalize_family(prompt.attack_family or plan.selected_attack_family)
+            has_allowed_asset = bool(prompt_asset_ids.intersection(allowed_asset_ids))
+            if prompt_asset_ids and not has_allowed_asset:
+                continue
+            if not prompt_asset_ids and prompt_family not in {canonical_family, "retrieval_attacks"}:
+                continue
+            constrained.append(
+                prompt.model_copy(
+                    update={
+                        "attack_family": canonical_family,
+                        "metadata": {
+                            **prompt.metadata,
+                            "execution_intent_family": canonical_family,
+                            "planner_family": plan.selected_attack_family,
+                        },
+                    }
+                )
+            )
+        context.metadata["rag_prompt_constraint"] = {
+            "input_count": len(prompts),
+            "output_count": len(constrained),
+        }
+        return constrained
+
+    def _execution_intent(self, context: PlannerContext) -> dict[str, object]:
+        intent = context.metadata.get("execution_intent")
+        if isinstance(intent, dict):
+            return intent
+        return {}
+
+    def _is_rag_execution_intent(self, context: PlannerContext) -> bool:
+        intent = self._execution_intent(context)
+        return (
+            str(intent.get("canonical_family", "")).lower() == "rag_poisoning"
+            or str(intent.get("preset", "")).lower() == "rag-poisoning"
+        )
+
+    def _allowed_strategy_families(self, context: PlannerContext) -> set[str]:
+        intent = self._execution_intent(context)
+        values = intent.get("strategy_families", RAG_EXECUTION_CONSTRAINT["strategy_families"])
+        families = values if isinstance(values, list) else [values]
+        planner_family = intent.get("planner_family", RAG_EXECUTION_CONSTRAINT["planner_family"])
+        return {self._normalize_family(str(family)) for family in [*families, planner_family]}
+
+    def _allowed_dataset_b_categories(self, context: PlannerContext) -> set[str]:
+        intent = self._execution_intent(context)
+        values = intent.get("dataset_b_categories", RAG_EXECUTION_CONSTRAINT["dataset_b_categories"])
+        categories = values if isinstance(values, list) else [values]
+        canonical_family = intent.get("canonical_family", RAG_EXECUTION_CONSTRAINT["canonical_family"])
+        return {self._normalize_family(str(category)) for category in [*categories, canonical_family]}
+
+    def _knowledge_entry_matches_family(self, entry: KnowledgeEntry, allowed_families: set[str]) -> bool:
+        if entry.category == "attack_families":
+            return self._normalize_family(entry.id) in allowed_families
+        if entry.category == "strategies":
+            return self._normalize_family(str(entry.metadata.get("attack_family", ""))) in allowed_families
+        return True
+
+    def _normalize_family(self, value: str) -> str:
+        normalized = value.lower().removeprefix("af-").replace("-", "_").strip()
+        if normalized == "retrieval_attacks":
+            return "retrieval_attacks"
+        return normalized
 
     def _deterministic_family_assessment(
         self,

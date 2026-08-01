@@ -13,8 +13,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (!response.ok) {
     let message = `${response.status} ${response.statusText}`;
     try {
-      const payload = (await response.json()) as { detail?: string };
-      if (payload.detail) message = payload.detail;
+      const payload = (await response.json()) as { detail?: string | { message?: string } };
+      if (typeof payload.detail === "string") message = payload.detail;
+      if (payload.detail && typeof payload.detail === "object" && payload.detail.message) message = payload.detail.message;
     } catch {
       // The status text remains the most useful fallback.
     }

@@ -182,6 +182,12 @@ export interface AttackRun {
 
 export interface RunRequest {
   objective: string;
+  objective_preset: string;
+  rag_document?: {
+    filename: string;
+    content_type: string;
+    content_base64: string;
+  } | null;
   target_model: string;
   target_base_url: string;
   target_type: string;

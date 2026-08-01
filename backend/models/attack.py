@@ -38,6 +38,7 @@ from backend.models.execution_result import (
     TurnStatus,
 )
 from backend.prompt.normalizer import PromptNormalizer
+from backend.rag import RagTestContext, build_poisoned_retrieval_prompt
 from backend.scoring.scorer import Scorer
 from backend.targets.base_target import TargetAdapter
 from backend.targets.provider_adapter import TargetAdapterProvider
@@ -354,6 +355,18 @@ class AttackExecutor:
                 "attack_family": prompt.attack_family,
                 "asset_ids": list(prompt.asset_ids),
             }
+            executed_prompt = prompt.content
+            rag_payload = resolved_config.metadata.get("rag_test_context")
+            family = str(prompt.attack_family or (plan.selected_attack_family if plan else ""))
+            if rag_payload and self._is_rag_poisoning_family(family):
+                rag_context = RagTestContext.model_validate(rag_payload)
+                executed_prompt, rag_metadata = build_poisoned_retrieval_prompt(
+                    prompt.content,
+                    rag_context,
+                    strategy=str(prompt.strategy_id or (plan.selected_strategy if plan else "rag_poisoning")),
+                    canary=f"REDLENS-RAG-{execution_id[:8].upper()}",
+                )
+                prompt_metadata.update(rag_metadata)
             evaluation_context = resolved_config.metadata.get("evaluation_context")
             if isinstance(evaluation_context, dict):
                 prompt_metadata.update(evaluation_context)
@@ -380,7 +393,7 @@ class AttackExecutor:
             messages.append(
                 ProviderMessage(
                     role=ProviderRole.USER,
-                    content=prompt.content,
+                    content=executed_prompt,
                     metadata=prompt_metadata,
                 )
             )
@@ -435,7 +448,7 @@ class AttackExecutor:
                 history.append(
                     ExecutionTurn(
                         turn_number=turn_number,
-                        prompt=prompt.content,
+                        prompt=executed_prompt,
                         response="",
                         provider=provider_name,
                         model=requested_model,
@@ -463,7 +476,7 @@ class AttackExecutor:
                 history.append(
                     ExecutionTurn(
                         turn_number=turn_number,
-                        prompt=prompt.content,
+                        prompt=executed_prompt,
                         response="",
                         provider=provider_name,
                         model=requested_model,
@@ -510,7 +523,7 @@ class AttackExecutor:
             history.append(
                 ExecutionTurn(
                     turn_number=turn_number,
-                    prompt=prompt.content,
+                    prompt=executed_prompt,
                     response=response.content,
                     provider=provider_name,
                     model=response_model,
@@ -923,7 +936,12 @@ class AttackExecutor:
     ) -> dict[str, Any]:
         """Preserve evaluation-relevant planner annotations without prompt duplication."""
 
-        custom_metadata = self._sanitize_metadata(config.metadata)
+        safe_custom_metadata = {
+            key: value
+            for key, value in config.metadata.items()
+            if key != "rag_test_context"
+        }
+        custom_metadata = self._sanitize_metadata(safe_custom_metadata)
         metadata: dict[str, Any] = dict(custom_metadata) if isinstance(custom_metadata, dict) else {}
         metadata.update(
             {
@@ -957,6 +975,10 @@ class AttackExecutor:
                 }
             )
         return metadata
+
+    def _is_rag_poisoning_family(self, family: str) -> bool:
+        normalized = family.lower().removeprefix("af-").replace("-", "_").strip()
+        return normalized in {"rag_poisoning", "retrieval_attacks"}
 
     def _coerce_provider_response(self, response: Any) -> ProviderResponse:
         """Validate provider output while accepting a serialized response mapping."""

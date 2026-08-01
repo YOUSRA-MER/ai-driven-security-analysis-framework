@@ -16,6 +16,7 @@ import {
   Copy,
   Gauge,
   History,
+  FileText,
   ListTree,
   Menu,
   PanelLeftClose,
@@ -31,6 +32,7 @@ import {
   Sparkles,
   TerminalSquare,
   Trash2,
+  Upload,
   Moon,
   Sun,
   X,
@@ -58,6 +60,7 @@ import {
   getRun,
   listRuns,
 } from "./api";
+import { AssessmentReportModal } from "./report/AssessmentReportModal";
 import type {
   AttackRun,
   ExecutionTurn,
@@ -140,6 +143,8 @@ const OBJECTIVE_TEMPLATES = [
 
 const DEFAULT_FORM: RunRequest = {
   objective: OBJECTIVE_TEMPLATES[1].value,
+  objective_preset: "injection",
+  rag_document: null,
   target_model: "llama3.2:3b",
   target_base_url: "http://localhost:11434",
   target_type: "chatbot",
@@ -172,6 +177,7 @@ function App() {
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
   const [mobileConfigOpen, setMobileConfigOpen] = useState(false);
+  const [reportResult, setReportResult] = useState<AttackRun | null>(null);
 
   const refreshPlatform = useCallback(async () => {
     try {
@@ -246,6 +252,7 @@ function App() {
     if (form.max_retries < 0 || form.max_retries > 10) errors.max_retries = "Choose between 0 and 10 retries.";
     if (form.timeout_seconds < 1 || form.timeout_seconds > 900) errors.timeout_seconds = "Choose a timeout between 1 and 900 seconds.";
     if (form.max_output_tokens < 16 || form.max_output_tokens > 8192) errors.max_output_tokens = "Choose between 16 and 8,192 tokens.";
+    if (form.objective_preset === "rag-poisoning" && !form.rag_document) errors.rag_document = "Upload a PDF, TXT, or MD knowledge source for RAG Poisoning.";
     return errors;
   }, [form]);
 
@@ -313,7 +320,35 @@ function App() {
   const handleTemplate = (value: string) => {
     setTemplate(value);
     const selected = OBJECTIVE_TEMPLATES.find((item) => item.id === value);
-    if (selected && selected.value) setForm((current) => ({ ...current, objective: selected.value }));
+    setForm((current) => ({
+      ...current,
+      objective_preset: value,
+      objective: selected?.value || current.objective,
+      rag_document: value === "rag-poisoning" ? current.rag_document : null,
+    }));
+  };
+
+  const handleRagDocument = async (file: File | undefined) => {
+    if (!file) return;
+    const extension = file.name.split(".").pop()?.toLowerCase();
+    if (!extension || !["pdf", "txt", "md"].includes(extension)) {
+      setError("Knowledge source must be a PDF, TXT, or MD file.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Knowledge source exceeds the 5 MB size limit.");
+      return;
+    }
+    const dataUrl = await readFileAsDataUrl(file);
+    setForm((current) => ({
+      ...current,
+      rag_document: {
+        filename: file.name,
+        content_type: file.type || "application/octet-stream",
+        content_base64: dataUrl.slice(dataUrl.indexOf(",") + 1),
+      },
+    }));
+    setError("");
   };
 
   const copyText = async (value: string) => {
@@ -456,7 +491,7 @@ function App() {
                     value={form.objective}
                     onChange={(event) => {
                       setTemplate("custom");
-                      setForm((current) => ({ ...current, objective: event.target.value }));
+                      setForm((current) => ({ ...current, objective: event.target.value, objective_preset: "custom", rag_document: null }));
                     }}
                     maxLength={4000}
                     placeholder="Describe the behavior you want to assess."
@@ -468,6 +503,38 @@ function App() {
                     <small id="objective-count" className="field-counter">{form.objective.length}/4000</small>
                   </div>
                 </label>
+
+                {template === "rag-poisoning" && (
+                  <div className={`form-section rag-context-section ${formAttempted && formErrors.rag_document ? "has-error" : ""}`}>
+                    <div className="form-section-title"><span><FileText size={15} /> RAG Test Context</span><small>Assessment-scoped</small></div>
+                    <span className="rag-context-label">Knowledge source <b>Required</b></span>
+                    {form.rag_document ? (
+                      <div className="rag-document-status">
+                        <span className="rag-document-icon"><FileText size={18} /></span>
+                        <div><strong>{form.rag_document.filename}</strong><small>{formatBytes(Math.floor(form.rag_document.content_base64.length * 0.75))} · ready</small></div>
+                        <div className="rag-document-actions">
+                          <label>Replace<input type="file" accept=".pdf,.txt,.md,text/plain,text/markdown,application/pdf" onChange={(event) => void handleRagDocument(event.target.files?.[0])} /></label>
+                          <Button variant="ghost" size="sm" onClick={() => setForm((current) => ({ ...current, rag_document: null }))}>Remove</Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <label
+                        className="rag-document-dropzone"
+                        onDragOver={(event) => event.preventDefault()}
+                        onDrop={(event) => {
+                          event.preventDefault();
+                          void handleRagDocument(event.dataTransfer.files[0]);
+                        }}
+                      >
+                        <input type="file" accept=".pdf,.txt,.md,text/plain,text/markdown,application/pdf" onChange={(event) => void handleRagDocument(event.target.files?.[0])} />
+                        <Upload size={20} />
+                        <strong>Drop document here or <span>browse</span></strong>
+                        <small>PDF, TXT or MD · maximum 5 MB</small>
+                      </label>
+                    )}
+                    {formAttempted && formErrors.rag_document && <small className="field-error">{formErrors.rag_document}</small>}
+                  </div>
+                )}
 
                 <div className="selection-row">
                   <span>Attack approach</span>
@@ -625,6 +692,11 @@ function App() {
                   {latestRun?.status === "awaiting_execution" && (
                     <Button variant="primary" size="sm" onClick={() => void handleExecute()}><Play /> Execute</Button>
                   )}
+                  {latestRun?.status === "completed" && (
+                    <Button variant="primary" size="sm" onClick={() => setReportResult(latestRun)}>
+                      <FileText /> Assessment Report
+                    </Button>
+                  )}
                   {latestRun && ACTIVE_STATUSES.has(latestRun.status) && (
                     <Button variant="danger" size="sm" onClick={() => void handleCancel()}><CircleStop /> Cancel</Button>
                   )}
@@ -714,6 +786,11 @@ function App() {
       </div>
 
       {toast && <div className="toast" role="status" aria-live="polite"><Check size={15} /> {toast}</div>}
+      <AssessmentReportModal
+        open={Boolean(reportResult)}
+        result={reportResult}
+        onClose={() => setReportResult(null)}
+      />
     </div>
   );
 }
@@ -1416,6 +1493,15 @@ function signalLabel(signal: AttackRun["summary"]["heuristic_label"]): string {
     inconclusive: "Inconclusive",
   };
   return labels[signal];
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error ?? new Error("Could not read document"));
+    reader.readAsDataURL(file);
+  });
 }
 
 function verdictDetail(signal: AttackRun["summary"]["heuristic_label"]): string {

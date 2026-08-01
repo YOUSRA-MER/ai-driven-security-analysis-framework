@@ -11,6 +11,19 @@ export interface ReportMetric {
   detail?: string;
 }
 
+export interface ReportDistributionItem {
+  label: string;
+  value: number;
+  tone: ReportSeverity | "safe" | "warning";
+  detail?: string;
+}
+
+export interface ReportReference {
+  framework: "OWASP" | "MITRE";
+  label: string;
+  detail?: string;
+}
+
 export interface ReportTimelineItem {
   label: string;
   phase: string;
@@ -69,6 +82,20 @@ export interface AssessmentReport {
     title: string;
     detail: string;
     priority: "Immediate" | "Planned" | "Monitor";
+    owner: string;
+    timeframe: string;
+    controlArea: string;
   }>;
+  metadata: ReportMetric[];
+  visualizations: {
+    severityDistribution: ReportDistributionItem[];
+    turnDisposition: ReportDistributionItem[];
+    confidenceSummary: ReportMetric[];
+    latencySummary: ReportMetric[];
+  };
+  references: {
+    owasp: ReportReference[];
+    mitre: ReportReference[];
+  };
   statistics: ReportMetric[];
 }

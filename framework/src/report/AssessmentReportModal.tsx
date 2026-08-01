@@ -1,9 +1,10 @@
-import { AlertTriangle, BarChart3, CheckCircle2, Clock3, FileText, Gauge, ListChecks, ShieldAlert, Target } from "lucide-react";
+import { AlertTriangle, BarChart3, CheckCircle2, Clock3, Download, FileCode2, FileText, Gauge, ListChecks, ShieldAlert, ShieldCheck, Target } from "lucide-react";
 import { useMemo } from "react";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { Badge, Button, Modal } from "../components/ui";
+import { downloadReportHtml, downloadReportPdf } from "./reportExport";
 import { generateAssessmentReport } from "./reportGenerator";
-import type { AssessmentResult, ReportFinding, ReportMetric, ReportSeverity } from "./reportModel";
+import type { AssessmentResult, ReportDistributionItem, ReportFinding, ReportMetric, ReportReference, ReportSeverity } from "./reportModel";
 
 export function AssessmentReportModal({
   open,
@@ -25,7 +26,17 @@ export function AssessmentReportModal({
       open={open}
       size="lg"
       title="Assessment Report"
-      footer={<Button variant="primary" onClick={onClose}>Close report</Button>}
+      footer={(
+        <div className="report-export-actions">
+          <Button onClick={() => downloadReportPdf(report)}>
+            <Download /> Download PDF
+          </Button>
+          <Button onClick={() => downloadReportHtml(report)}>
+            <FileCode2 /> Download HTML
+          </Button>
+          <Button variant="primary" onClick={onClose}>Close report</Button>
+        </div>
+      )}
     >
       <article className="assessment-report" aria-labelledby="assessment-report-title">
         <header className="report-cover">
@@ -33,18 +44,37 @@ export function AssessmentReportModal({
             <span className="eyebrow">Devoteam RedLens</span>
             <h2 id="assessment-report-title">{report.title}</h2>
             <p>{report.executiveSummary.narrative}</p>
+            <div className="report-cover-meta">
+              {report.metadata.slice(1, 5).map((item) => <span key={item.label}>{item.label}: <strong>{item.value}</strong></span>)}
+            </div>
           </div>
-          <div className="report-verdict">
+          <div className={`report-verdict risk-${riskLevel(report.executiveSummary.riskScore).toLowerCase()}`}>
             <Badge tone={report.executiveSummary.riskScore > 69 ? "danger" : report.executiveSummary.riskScore > 39 ? "warning" : "success"} rounded>
-              {report.executiveSummary.verdict}
+              {riskLevel(report.executiveSummary.riskScore)} risk
             </Badge>
             <strong>{report.executiveSummary.riskScore}<small>/100</small></strong>
-            <span>Risk score</span>
+            <span>{report.executiveSummary.verdict}</span>
           </div>
         </header>
 
         <ReportSection title="Executive Summary" icon={<Gauge size={18} />}>
-          <MetricGrid metrics={report.executiveSummary.keyMetrics} />
+          <div className="report-executive-grid">
+            <RiskScoreCard score={report.executiveSummary.riskScore} verdict={report.executiveSummary.verdict} confidence={report.executiveSummary.confidence} />
+            <MetricGrid metrics={report.executiveSummary.keyMetrics} />
+          </div>
+        </ReportSection>
+
+        <ReportSection title="Assessment Metadata" icon={<FileText size={18} />}>
+          <MetricGrid metrics={report.metadata} />
+        </ReportSection>
+
+        <ReportSection title="Security Analytics" icon={<BarChart3 size={18} />}>
+          <div className="report-analytics-grid">
+            <DistributionChart title="Severity Distribution" items={report.visualizations.severityDistribution} />
+            <DistributionChart title="Vulnerable vs Safe Turns" items={report.visualizations.turnDisposition} />
+            <MetricPanel title="Confidence Summary" metrics={report.visualizations.confidenceSummary} />
+            <MetricPanel title="Latency Summary" metrics={report.visualizations.latencySummary} />
+          </div>
         </ReportSection>
 
         <div className="report-two-column">
@@ -115,11 +145,28 @@ export function AssessmentReportModal({
             {report.recommendations.map((item) => (
               <article key={item.title}>
                 <Badge tone={item.priority === "Immediate" ? "danger" : item.priority === "Planned" ? "info" : "neutral"} size="sm">{item.priority}</Badge>
-                <div><strong>{item.title}</strong><p>{item.detail}</p></div>
+                <div>
+                  <strong>{item.title}</strong>
+                  <p>{item.detail}</p>
+                  <dl>
+                    <div><dt>Owner</dt><dd>{item.owner}</dd></div>
+                    <div><dt>Timeframe</dt><dd>{item.timeframe}</dd></div>
+                    <div><dt>Control area</dt><dd>{item.controlArea}</dd></div>
+                  </dl>
+                </div>
               </article>
             ))}
           </div>
         </ReportSection>
+
+        {(report.references.owasp.length > 0 || report.references.mitre.length > 0) && (
+          <ReportSection title="Framework References" icon={<ShieldCheck size={18} />}>
+            <div className="report-reference-grid">
+              <ReferenceList title="OWASP LLM Top 10" references={report.references.owasp} empty="No OWASP mappings were present in assessment metadata." />
+              <ReferenceList title="MITRE ATLAS" references={report.references.mitre} empty="No MITRE mappings were present in assessment metadata." />
+            </div>
+          </ReportSection>
+        )}
 
         <ReportSection title="Statistics" icon={<BarChart3 size={18} />}>
           <MetricGrid metrics={report.statistics} />
@@ -129,12 +176,61 @@ export function AssessmentReportModal({
   );
 }
 
+function RiskScoreCard({ score, verdict, confidence }: { score: number; verdict: string; confidence: number }) {
+  return (
+    <div className={`report-risk-card risk-${riskLevel(score).toLowerCase()}`}>
+      <div className="report-risk-ring" style={{ "--risk-score": `${score}%` } as CSSProperties}>
+        <strong>{score}</strong>
+        <span>/100</span>
+      </div>
+      <div>
+        <Badge tone={score > 69 ? "danger" : score > 39 ? "warning" : "success"} rounded>{riskLevel(score)} risk</Badge>
+        <h4>{verdict}</h4>
+        <p>Executive risk score based on maximum heuristic signal, observed findings, and completed assessment coverage.</p>
+        <small>Planner confidence {confidence}%</small>
+      </div>
+    </div>
+  );
+}
+
 function ReportSection({ title, icon, children }: { title: string; icon: ReactNode; children: ReactNode }) {
   return (
     <section className="report-section" aria-labelledby={`report-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}>
       <h3 id={`report-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}>{icon}{title}</h3>
       {children}
     </section>
+  );
+}
+
+function MetricPanel({ title, metrics }: { title: string; metrics: ReportMetric[] }) {
+  return (
+    <article className="report-chart-panel">
+      <h4>{title}</h4>
+      <DefinitionList metrics={metrics} />
+    </article>
+  );
+}
+
+function DistributionChart({ title, items }: { title: string; items: ReportDistributionItem[] }) {
+  const total = items.reduce((sum, item) => sum + item.value, 0);
+  return (
+    <article className="report-chart-panel">
+      <div className="report-chart-heading"><h4>{title}</h4><span>{total} total</span></div>
+      <div className="report-bar-chart">
+        {items.map((item) => {
+          const percent = total > 0 ? Math.round((item.value / total) * 100) : 0;
+          return (
+            <div className={`report-bar-row tone-${item.tone}`} key={item.label}>
+              <div><span>{item.label}</span><strong>{item.value}</strong></div>
+              <div className="report-bar-track" aria-label={`${item.label}: ${item.value}`}>
+                <span style={{ "--bar-value": `${percent}%` } as CSSProperties} />
+              </div>
+              {item.detail && <small>{item.detail}</small>}
+            </div>
+          );
+        })}
+      </div>
+    </article>
   );
 }
 
@@ -163,6 +259,26 @@ function DefinitionList({ metrics }: { metrics: ReportMetric[] }) {
         </div>
       ))}
     </dl>
+  );
+}
+
+function ReferenceList({ title, references, empty }: { title: string; references: ReportReference[]; empty: string }) {
+  return (
+    <article className="report-reference-card">
+      <h4>{title}</h4>
+      {references.length > 0 ? (
+        <ul>
+          {references.map((reference) => (
+            <li key={`${reference.framework}-${reference.label}`}>
+              <strong>{reference.label}</strong>
+              {reference.detail && reference.detail !== reference.label && <span>{reference.detail}</span>}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>{empty}</p>
+      )}
+    </article>
   );
 }
 
@@ -207,4 +323,11 @@ function formatDuration(milliseconds: number): string {
   if (!Number.isFinite(milliseconds) || milliseconds <= 0) return "0 ms";
   if (milliseconds < 1000) return `${Math.round(milliseconds)} ms`;
   return `${(milliseconds / 1000).toFixed(1)} s`;
+}
+
+function riskLevel(score: number): "Critical" | "High" | "Moderate" | "Low" {
+  if (score >= 85) return "Critical";
+  if (score >= 65) return "High";
+  if (score >= 35) return "Moderate";
+  return "Low";
 }

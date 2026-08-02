@@ -246,18 +246,48 @@ export default function LandingPage() {
             </div>
             <div className="landing-overview-map" aria-label="RedLens assessment path from objective to evidence">
               <span className="landing-overview-map-grid" aria-hidden="true" />
-              <span className="landing-overview-map-route landing-overview-map-route--first" aria-hidden="true" />
-              <span className="landing-overview-map-route landing-overview-map-route--second" aria-hidden="true" />
-              <article className="landing-overview-map-node landing-overview-map-node--objective">
-                <span>Assessment input</span><strong>Security objective</strong><small>Define the target and intent.</small>
-              </article>
-              <article className="landing-overview-map-node landing-overview-map-node--planner">
-                <span>AI analysis</span><strong>Attack strategy</strong><small>Generate focused test paths.</small>
-              </article>
-              <article className="landing-overview-map-node landing-overview-map-node--evidence">
-                <span>Review surface</span><strong>Security evidence</strong><small>Inspect observable signals.</small>
-              </article>
-              <span className="landing-overview-map-core" aria-hidden="true"><i /><i /><i /></span>
+              <div className="landing-overview-dashboard-bar">
+                <span><i /> Live Status <small>Assessment Status</small></span>
+                <strong>Running assessment <small>04:12 elapsed</small></strong>
+              </div>
+              <div className="landing-overview-dashboard-body">
+                <div className="landing-overview-workflow">
+                  <article className="landing-overview-flow-card landing-overview-flow-card--input">
+                    <span>Assessment input</span>
+                    <strong>Security objective</strong>
+                    <small>Define the target and intent.</small>
+                  </article>
+                  <article className="landing-overview-flow-card landing-overview-flow-card--planner">
+                    <span>AI Planner</span>
+                    <strong>Attack Strategy</strong>
+                    <small>Generate focused test paths.</small>
+                  </article>
+                  <article className="landing-overview-flow-card landing-overview-flow-card--target">
+                    <span>LLM Target</span>
+                    <strong>Application under test</strong>
+                    <small>Monitor model behavior.</small>
+                  </article>
+                  <article className="landing-overview-flow-card landing-overview-flow-card--evidence">
+                    <span>Review surface</span>
+                    <strong>Security Evidence</strong>
+                    <small>Inspect observable signals.</small>
+                  </article>
+                </div>
+                <aside className="landing-overview-side-panel">
+                  <div className="landing-overview-risk">
+                    <span>Risk Score</span>
+                    <strong>74<small>/100</small></strong>
+                    <div className="landing-overview-risk-meter" aria-hidden="true"><i /></div>
+                    <small>High confidence signal</small>
+                  </div>
+                  <div className="landing-overview-events">
+                    <span>Live events</span>
+                    <p><i /> Prompt variant completed</p>
+                    <p><i /> Evidence captured</p>
+                    <p><i /> Heuristic evaluation ready</p>
+                  </div>
+                </aside>
+              </div>
             </div>
           </div>
         </section>

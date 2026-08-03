@@ -24,6 +24,7 @@ from backend.ai.providers.openrouter_provider import OpenRouterProvider
 from backend.ai.providers.provider_interface import ProviderMessage
 from backend.ai.utils.enums import ProviderRole
 from backend.config.settings import get_settings
+from backend.database.mysql_history import history_store
 from backend.models.attack import AttackExecutor
 from backend.models.execution_result import ExecutionConfig, ExecutionResult, TurnStatus
 from backend.rag import RagDocumentError, RagDocumentInput, RagTestContext, ingest_rag_document
@@ -319,6 +320,7 @@ class AttackRunCoordinator:
                 run.phase = "failed"
                 run.error = "; ".join(run.planner_result.errors) or "Planner did not produce a plan."
                 run.add_event("planning_failed", run.error, level="error")
+                await self._persist(run)
                 return
 
             run.add_event(
@@ -341,12 +343,14 @@ class AttackRunCoordinator:
             run.status = RunStatus.INTERRUPTED
             run.phase = "interrupted"
             run.add_event("run_interrupted", "Run interrupted", level="warning")
+            await self._persist(run)
         except Exception as exc:  # noqa: BLE001 - background jobs must become observable failures.
             logger.exception("attack_run_planning_failed", extra={"run_id": run.run_id})
             run.status = RunStatus.FAILED
             run.phase = "failed"
             run.error = self._safe_error(exc)
             run.add_event("run_failed", run.error, level="error")
+            await self._persist(run)
 
     async def _execute(self, run: AttackRun) -> None:
         try:
@@ -416,16 +420,53 @@ class AttackRunCoordinator:
                     "latency_ms": run.execution_result.total_latency,
                 },
             )
+            await self._persist(run)
         except asyncio.CancelledError:
             run.status = RunStatus.INTERRUPTED
             run.phase = "interrupted"
             run.add_event("run_interrupted", "Execution interrupted", level="warning")
+            await self._persist(run)
         except Exception as exc:  # noqa: BLE001 - execution failures must remain queryable.
             logger.exception("attack_run_execution_failed", extra={"run_id": run.run_id})
             run.status = RunStatus.FAILED
             run.phase = "failed"
             run.error = self._safe_error(exc)
             run.add_event("execution_failed", run.error, level="error")
+            await self._persist(run)
+
+    async def _persist(self, run: AttackRun) -> None:
+        """Persist terminal assessment state without blocking the event loop."""
+
+        summary = run._summary()
+        findings = [
+            item for item in run.heuristic_evaluation
+            if item.get("evidence") or float(item.get("score", 0)) >= 0.6
+        ]
+        record = {
+            "run_id": run.run_id,
+            "assessed_at": run.created_at.astimezone(timezone.utc).replace(tzinfo=None),
+            "target_model": run.request.target_model,
+            "target_type": run.request.target_type,
+            "attack_family": summary["attack_family"],
+            "objective": run.request.objective,
+            "risk_score": round(float(summary["maximum_heuristic_score"]) * 100, 2),
+            "status": run.status.value,
+            "heuristic_result": run.heuristic_evaluation,
+            "turns": summary["total_turns"],
+            "findings": findings,
+            "duration_ms": summary["total_latency_ms"],
+            "report_metadata": {
+                "report_id": f"report-{run.run_id}",
+                "generated_from": "persisted_assessment",
+                "generated_at": run.updated_at.isoformat(),
+                "available": run.execution_result is not None,
+            },
+            "payload": run.public(),
+        }
+        try:
+            await asyncio.to_thread(history_store.save, record)
+        except Exception:
+            logger.exception("assessment_history_save_failed", extra={"run_id": run.run_id})
 
     def _evaluate(self, result: ExecutionResult) -> list[dict[str, Any]]:
         scorer = CriteriaAwareScorer()
@@ -625,8 +666,19 @@ async def create_run(request: RunCreateRequest) -> dict[str, Any]:
 async def list_runs(limit: int = Query(default=30, ge=1, le=100)) -> dict[str, Any]:
     """Return recent runs for the history table."""
 
-    ordered = sorted(coordinator.runs.values(), key=lambda run: run.created_at, reverse=True)
-    return {"runs": [run.public(detailed=False) for run in ordered[:limit]]}
+    active = [
+        run.public(detailed=False) for run in coordinator.runs.values()
+        if run.run_id in coordinator.tasks
+    ]
+    try:
+        persisted = await asyncio.to_thread(history_store.list, limit)
+    except Exception as exc:
+        logger.exception("assessment_history_list_failed")
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Assessment history database unavailable") from exc
+    by_id = {item["run_id"]: item for item in persisted}
+    by_id.update({item["run_id"]: item for item in active})
+    ordered = sorted(by_id.values(), key=lambda item: item["created_at"], reverse=True)
+    return {"runs": ordered[:limit]}
 
 
 @router.get("/runs/{run_id}")
@@ -634,9 +686,18 @@ async def get_run(run_id: str) -> dict[str, Any]:
     """Return current planning/execution state for one run."""
 
     run = coordinator.runs.get(run_id)
-    if run is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Run not found")
-    return run.public()
+    if run is not None and (run_id in coordinator.tasks or run.status not in {RunStatus.COMPLETED, RunStatus.PARTIAL, RunStatus.FAILED, RunStatus.INTERRUPTED}):
+        return run.public()
+    try:
+        persisted = await asyncio.to_thread(history_store.get, run_id)
+    except Exception as exc:
+        logger.exception("assessment_history_get_failed", extra={"run_id": run_id})
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Assessment history database unavailable") from exc
+    if persisted is not None:
+        return persisted
+    if run is not None:
+        return run.public()
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Run not found")
 
 
 @router.post("/runs/{run_id}/execute", status_code=status.HTTP_202_ACCEPTED)
@@ -667,13 +728,18 @@ async def cancel_run(run_id: str) -> dict[str, Any]:
 
 @router.delete("/runs/{run_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_run(run_id: str) -> None:
-    """Remove a completed run from in-memory history."""
+    """Permanently remove a completed assessment from history."""
 
     run = coordinator.runs.get(run_id)
-    if run is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Run not found")
-    if run.run_id in coordinator.tasks:
+    if run is not None and run.run_id in coordinator.tasks:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Active runs cannot be deleted")
+    try:
+        deleted = await asyncio.to_thread(history_store.delete, run_id)
+    except Exception as exc:
+        logger.exception("assessment_history_delete_failed", extra={"run_id": run_id})
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Assessment history database unavailable") from exc
+    if not deleted and run is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Run not found")
     coordinator.runs.pop(run_id, None)
 
 

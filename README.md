@@ -15,7 +15,7 @@ backend/
   scoring/      Response scoring and vulnerability evaluation
   models/       Domain models and abstract interfaces
   reports/      Future report generation
-  database/     Future persistence adapters
+  database/     MySQL assessment-history persistence and schema
   utils/        Shared utilities
   config/       Runtime configuration
   main.py       Minimal CLI entry point
@@ -65,6 +65,20 @@ backend/
 Existing `TargetAdapter` implementations are supported through a provider bridge, so Ollama, Gemini, OpenAI-compatible, and REST targets continue to use their current integration boundary.
 
 Uploaded RAG knowledge sources are stored under `backend/uploads/` and indexed in a persistent ChromaDB collection under `backend/uploads/.chromadb/`, allowing retrieval context to remain available across backend restarts.
+
+### Assessment History
+
+Completed assessments are stored in MySQL; ChromaDB remains dedicated to RAG embeddings and retrieval. Create a database, apply `backend/database/schema.sql`, and configure the backend with:
+
+```text
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+MYSQL_DATABASE=redlens
+MYSQL_USER=redlens
+MYSQL_PASSWORD=replace-me
+```
+
+The application also creates the `assessments` table on first use when the configured user has `CREATE` permission. Run-history list, detail, delete, reopen, and existing report downloads continue to use the current `/api/runs` interface.
 
 ### Controlled Baseline
 

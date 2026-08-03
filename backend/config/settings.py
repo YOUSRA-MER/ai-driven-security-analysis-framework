@@ -42,6 +42,11 @@ class Settings(BaseModel):
     openrouter_timeout_seconds: float = Field(default=60.0, gt=0)
     openrouter_max_retries: int = Field(default=3, ge=1)
     app_name: str = "Devoteam RedLens"
+    mysql_host: str = "localhost"
+    mysql_port: int = 3306
+    mysql_database: str = "redlens"
+    mysql_user: str = "redlens"
+    mysql_password: str = ""
 
     @property
     def openrouter_configured(self) -> bool:
@@ -77,4 +82,9 @@ def get_settings() -> Settings:
         openrouter_timeout_seconds=float(os.getenv("OPENROUTER_TIMEOUT_SECONDS", "60")),
         openrouter_max_retries=int(os.getenv("OPENROUTER_MAX_RETRIES", "3")),
         app_name=os.getenv("OPENROUTER_APP_NAME", "Devoteam RedLens"),
+        mysql_host=os.getenv("MYSQL_HOST", "localhost"),
+        mysql_port=int(os.getenv("MYSQL_PORT", "3306")),
+        mysql_database=os.getenv("MYSQL_DATABASE", "redlens"),
+        mysql_user=os.getenv("MYSQL_USER", "redlens"),
+        mysql_password=os.getenv("MYSQL_PASSWORD", ""),
     )
